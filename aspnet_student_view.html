@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ASP.NET MVC — Final Project</title>
+<title>ASP.NET MVC â€” Final Project</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -118,7 +118,7 @@
   .pb-tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .pb-tag { font-size: 12px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border2); padding: 3px 10px; border-radius: 4px; font-family: 'DM Sans', monospace; }
   .pb-feat { font-size: 13px; color: var(--muted); padding: 3px 0; display: flex; gap: 8px; }
-  .pb-feat::before { content: '→'; color: var(--accent); flex-shrink: 0; }
+  .pb-feat::before { content: 'â†’'; color: var(--accent); flex-shrink: 0; }
 
   /* availability banner inside card */
   .avail-banner { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; margin-top: 1rem; font-size: 13px; font-weight: 500; }
@@ -233,10 +233,10 @@
 
   <header class="header">
     <div class="header-bg"></div>
-    <div style="margin-bottom:0.75rem;"><a href="index.html" style="font-size:12px;color:var(--muted);text-decoration:none;opacity:0.7;">← Back</a></div>
-    <div class="header-tag">Student View — Final Project</div>
+    <div style="margin-bottom:0.75rem;"><a href="index.html" style="font-size:12px;color:var(--muted);text-decoration:none;opacity:0.7;">â† Back</a></div>
+    <div class="header-tag">Student View â€” Final Project</div>
     <h1>ASP.NET MVC<br><span>Final Project</span></h1>
-    <p>Requirements, project options, checkpoints, and your proposal checklist — everything in one place.</p>
+    <p>Requirements, project options, checkpoints, and your proposal checklist â€” everything in one place.</p>
     <div class="header-pills">
       <span class="header-pill pill-blue">ASP.NET MVC</span>
       <span class="header-pill pill-green">SQL Server</span>
@@ -254,55 +254,6 @@
     <a class="nav-pill" href="#proposal-checklist">Proposal Checklist</a>
     <button class="nav-pill" type="button" onclick="openDashboardDialog()">Group Dashboard</button>
   </nav>
-
-  <section class="desk-band" id="group-desk" aria-hidden="true">
-    <div class="desk-top">
-      <div>
-        <div class="desk-title">Group Desk</div>
-        <div class="desk-copy">Group leaders use a one-time claim code to open a group workspace. Adding members is lightweight; a password is only required once the group claims a title.</div>
-      </div>
-      <span class="badge badge-green" id="group-limit-badge">8 groups · 5-6 members</span>
-    </div>
-
-    <div class="form-grid" id="claim-form">
-      <div class="field">
-        <label for="claim-code">Claim code</label>
-        <input id="claim-code" placeholder="Example: ASP-ALPHA">
-      </div>
-      <div class="field">
-        <label for="leader-name">Leader name</label>
-        <input id="leader-name" placeholder="Full name of group leader">
-      </div>
-      <button class="btn btn-primary" onclick="claimGroupCode()">Open Group</button>
-    </div>
-    <div class="status-line" id="claim-status">No active group yet.</div>
-
-    <div class="active-group" id="legacy-active-group">
-      <div class="desk-top">
-        <div>
-          <div class="desk-title" id="active-group-name">Group</div>
-          <div class="desk-copy" id="active-group-meta"></div>
-        </div>
-        <button class="btn" onclick="leaveGroupDesk()">Leave Desk</button>
-      </div>
-
-      <div class="member-tools">
-        <div>
-          <div class="field">
-            <label for="legacy-member-search">Search roster</label>
-            <input id="legacy-member-search" placeholder="Type a student name">
-          </div>
-          <div class="search-results" id="legacy-member-results" style="margin-top:0.5rem;"></div>
-        </div>
-        <div>
-          <div class="card-label">Current members</div>
-          <div class="member-list" id="legacy-current-members"></div>
-        </div>
-      </div>
-
-      <div class="status-line" id="title-session-note"></div>
-    </div>
-  </section>
 
   <!-- REQUIREMENTS -->
   <section class="section" id="requirements">
@@ -330,17 +281,17 @@
     </div>
 
     <div class="card">
-      <div class="card-label" style="margin-bottom:0.75rem;">Full CRUD — all four are required</div>
+      <div class="card-label" style="margin-bottom:0.75rem;">Full CRUD â€” all four are required</div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1.5rem;">
         <div>
           <div class="check-item"><div class="check-dot"></div>Home page</div>
           <div class="check-item"><div class="check-dot"></div>Navigation bar</div>
-          <div class="check-item"><div class="check-dot"></div>Create — add new records</div>
-          <div class="check-item"><div class="check-dot"></div>Read — display record list</div>
-          <div class="check-item"><div class="check-dot"></div>Update — edit records</div>
+          <div class="check-item"><div class="check-dot"></div>Create â€” add new records</div>
+          <div class="check-item"><div class="check-dot"></div>Read â€” display record list</div>
+          <div class="check-item"><div class="check-dot"></div>Update â€” edit records</div>
         </div>
         <div>
-          <div class="check-item"><div class="check-dot"></div>Delete — remove records</div>
+          <div class="check-item"><div class="check-dot"></div>Delete â€” remove records</div>
           <div class="check-item"><div class="check-dot"></div>At least one database table</div>
           <div class="check-item"><div class="check-dot"></div>Validation on important fields</div>
           <div class="check-item"><div class="check-dot"></div>Bootstrap layout</div>
@@ -386,25 +337,25 @@
       <div class="role-card">
         <div class="role-num-big">01</div>
         <div class="role-title">Database and Model</div>
-        <div class="role-sub">Table design · model properties · validation attributes</div>
+        <div class="role-sub">Table design Â· model properties Â· validation attributes</div>
       </div>
       <div class="role-card">
         <div class="role-num-big">02</div>
         <div class="role-title">Controller and CRUD Logic</div>
-        <div class="role-sub">Create · Read · Update · Delete actions · route params</div>
+        <div class="role-sub">Create Â· Read Â· Update Â· Delete actions Â· route params</div>
       </div>
       <div class="role-card">
         <div class="role-num-big">03</div>
         <div class="role-title">Views and Bootstrap UI</div>
-        <div class="role-sub">Create · Index · Edit · Delete views · navbar · layout</div>
+        <div class="role-sub">Create Â· Index Â· Edit Â· Delete views Â· navbar Â· layout</div>
       </div>
       <div class="role-card">
         <div class="role-num-big">04</div>
         <div class="role-title">Testing and Docs</div>
-        <div class="role-sub">Feature testing · screenshots · documentation · presentation flow</div>
+        <div class="role-sub">Feature testing Â· screenshots Â· documentation Â· presentation flow</div>
       </div>
     </div>
-    <div class="note">During the final presentation, <strong style="color:var(--text)">each member must explain their own contribution.</strong> Know your part — don't let one person carry the whole demo.</div>
+    <div class="note">During the final presentation, <strong style="color:var(--text)">each member must explain their own contribution.</strong> Know your part â€” don't let one person carry the whole demo.</div>
   </section>
 
   <hr>
@@ -415,7 +366,7 @@
       <div class="section-num">03</div>
       <div class="section-title">Choose a Project Title</div>
     </div>
-    <p style="font-size:13px; color:var(--muted); margin-bottom:1.25rem;">Click to expand. <span style="color:var(--accent);font-weight:600;">★ recommended</span> titles are the best fit for beginners — clear scope, straightforward CRUD.</p>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:1.25rem;">Click to expand. <span style="color:var(--accent);font-weight:600;">â˜… recommended</span> titles are the best fit for beginners â€” clear scope, straightforward CRUD.</p>
     <div id="project-list"></div>
   </section>
 
@@ -427,7 +378,7 @@
       <div class="section-num">04</div>
       <div class="section-title">Title Availability</div>
     </div>
-    <p style="font-size:13px; color:var(--muted); margin-bottom:1.25rem;">Each title can be claimed by one group only. In the online version this should sync through Supabase; this prototype saves in this browser.</p>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:1.25rem;">Each title can be claimed by one group only. Availability syncs live from the database â€” refresh to see the latest.</p>
     <div class="card" style="display:flex; gap:1.5rem; flex-wrap:wrap; padding:0.9rem 1.5rem; margin-bottom:1rem;">
       <span style="display:flex;align-items:center;gap:6px;font-size:13px;"><span style="width:8px;height:8px;border-radius:50%;background:#15803d;display:inline-block;"></span>Open</span>
       <span style="display:flex;align-items:center;gap:6px;font-size:13px;"><span style="width:8px;height:8px;border-radius:50%;background:#b91c1c;display:inline-block;"></span>Claimed</span>
@@ -437,68 +388,10 @@
 
   <hr>
 
-  <section class="section" id="teacher-admin" aria-hidden="true">
-    <div class="section-header">
-      <div class="section-num">05</div>
-      <div class="section-title">Teacher Admin</div>
-    </div>
-    <div class="desk-band">
-      <div class="form-grid" id="admin-login">
-        <div class="field">
-          <label for="admin-pass">Admin password</label>
-          <input id="admin-pass" type="password" placeholder="Default: teacher123">
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="btn btn-primary" onclick="openAdmin()">Open Admin</button>
-        </div>
-        <button class="btn" onclick="resetDemoData()">Reset Demo Data</button>
-      </div>
-
-      <div class="admin-panel" id="admin-panel">
-        <div class="desk-top">
-          <div>
-            <div class="desk-title">Class Control</div>
-            <div class="desk-copy">Manage roster names, review groups, check title claims, and see who still has no group.</div>
-          </div>
-          <button class="btn" onclick="closeAdmin()">Close Admin</button>
-        </div>
-
-        <div class="summary-grid">
-          <div class="summary-box"><div class="summary-num" id="sum-groups">0</div><div class="summary-label">Groups opened</div></div>
-          <div class="summary-box"><div class="summary-num" id="sum-claimed">0</div><div class="summary-label">Titles claimed</div></div>
-          <div class="summary-box"><div class="summary-num" id="sum-ungrouped">0</div><div class="summary-label">Ungrouped</div></div>
-          <div class="summary-box"><div class="summary-num" id="sum-codes">12</div><div class="summary-label">Unused codes</div></div>
-        </div>
-
-        <div class="admin-grid">
-          <div>
-            <div class="field">
-              <label for="roster-input">Roster names</label>
-              <textarea id="roster-input" placeholder="Paste one full name per line"></textarea>
-            </div>
-            <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap;">
-              <button class="btn btn-primary" onclick="saveRoster()">Save Roster</button>
-              <button class="btn" onclick="loadSampleRoster()">Load Sample 43</button>
-            </div>
-            <div class="card-label" style="margin-top:1rem;">Students without groups</div>
-            <div class="admin-list" id="ungrouped-list"></div>
-          </div>
-          <div>
-            <div class="card-label">Groups and title claims</div>
-            <div class="admin-list" id="admin-groups"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <hr>
-
   <!-- CHECKPOINTS -->
   <section class="section" id="checkpoints">
     <div class="section-header">
-      <div class="section-num">06</div>
+      <div class="section-num">05</div>
       <div class="section-title">Project Checkpoints</div>
     </div>
     <div class="card">
@@ -530,7 +423,7 @@
   <!-- PROPOSAL CHECKLIST -->
   <section class="section" id="proposal-checklist">
     <div class="section-header">
-      <div class="section-num">07</div>
+      <div class="section-num">06</div>
       <div class="section-title">Proposal Checklist</div>
     </div>
     <p style="font-size:13px; color:var(--muted); margin-bottom:1.25rem;">Check each item off before submitting your proposal. Your progress saves in this browser.</p>
@@ -539,7 +432,7 @@
       <div class="prop-item" id="pi-0">
         <input type="checkbox" class="prop-cb" onchange="toggleProp(0,this)">
         <div class="prop-text">Project title chosen and confirmed available
-          <small>Check the availability section — first approved, first reserved</small>
+          <small>Check the availability section â€” first approved, first reserved</small>
         </div>
       </div>
       <div class="prop-item" id="pi-1">
@@ -563,7 +456,7 @@
       <div class="prop-item" id="pi-4">
         <input type="checkbox" class="prop-cb" onchange="toggleProp(4,this)">
         <div class="prop-text">Database table name and planned fields listed
-          <small>e.g. Products — Id, ProductName, Category, Quantity, Price</small>
+          <small>e.g. Products â€” Id, ProductName, Category, Quantity, Price</small>
         </div>
       </div>
       <div class="prop-item" id="pi-5">
@@ -581,7 +474,7 @@
       <div class="prop-item" id="pi-7">
         <input type="checkbox" class="prop-cb" onchange="toggleProp(7,this)">
         <div class="prop-text">Member roles assigned
-          <small>Database/Model · Controller/Logic · Views/UI · Testing/Docs</small>
+          <small>Database/Model Â· Controller/Logic Â· Views/UI Â· Testing/Docs</small>
         </div>
       </div>
       <div class="prop-item" id="pi-8">
@@ -619,7 +512,7 @@
     <div class="form-grid">
       <div class="field">
         <label for="claim-code-modal">Claim code</label>
-        <input id="claim-code-modal" placeholder="Example: ASP-ALPHA">
+        <input id="claim-code-modal" placeholder="Example: ASP-BRAVO">
       </div>
       <input id="leader-name-modal" type="hidden" value="Group Leader">
       <button class="btn btn-primary" onclick="confirmProjectClaim()">Confirm Claim</button>
@@ -641,7 +534,7 @@
     <div class="form-grid" id="dashboard-login">
       <div class="field">
         <label for="dashboard-code">Group code</label>
-        <input id="dashboard-code" placeholder="Example: ASP-ALPHA">
+        <input id="dashboard-code" placeholder="Example: ASP-BRAVO">
       </div>
       <div class="field">
         <label for="dashboard-pass">Password</label>
@@ -695,610 +588,12 @@
 </div>
 
 <script>
-const projects = [
-  { num:1, recommended:true, name:"Student Record Management System", desc:"A system for managing student information including personal details, enrollment status, and academic records.", fields:["StudentId","FirstName","LastName","Course","Year","Status"] },
-  { num:2, recommended:true, name:"Product Inventory Management System", desc:"An admin panel for tracking product stock, pricing, and category information.", fields:["ProductId","ProductName","Category","Quantity","Price","Status"] },
-  { num:3, recommended:true, name:"Employee Record Management System", desc:"A system for managing employee profiles, departments, and employment status.", fields:["EmployeeId","FullName","Department","Position","DateHired","Status"] },
-  { num:4, recommended:true, name:"Appointment Record Management System", desc:"A booking and scheduling system for managing appointments with clients or patients.", fields:["AppointmentId","ClientName","Service","Date","Time","Status"] },
-  { num:5, recommended:false, name:"Customer Information Management System", desc:"A CRM-lite system for tracking customer details and contact information.", fields:["CustomerId","Name","Email","Phone","Address","DateAdded"] },
-  { num:6, recommended:false, name:"Book Inventory Management System", desc:"A library or bookstore tool for managing book titles, authors, stock, and categories.", fields:["BookId","Title","Author","Genre","Quantity","Price"] },
-  { num:7, recommended:false, name:"Clinic Patient Record System", desc:"A patient records system for a small clinic tracking consultations and diagnoses.", fields:["PatientId","Name","Age","Gender","Diagnosis","VisitDate"] },
-  { num:8, recommended:false, name:"Supplier Management System", desc:"Track supplier details, product categories they supply, and contact information.", fields:["SupplierId","SupplierName","ContactPerson","Email","Phone","Category"] },
-  { num:9, recommended:false, name:"Sales Item Record System", desc:"A simple sales tracking tool for logging items sold, quantities, and totals.", fields:["SaleId","ItemName","Category","Quantity","UnitPrice","SaleDate"] },
-  { num:10, recommended:false, name:"Simple Ordering Record System", desc:"Track customer orders, ordered items, and order status for a small business.", fields:["OrderId","CustomerName","Item","Quantity","TotalAmount","Status"] },
-  { num:11, recommended:false, name:"Library Borrower Record System", desc:"Manage book borrow and return transactions for a school or community library.", fields:["BorrowId","BorrowerName","BookTitle","BorrowDate","ReturnDate","Status"] },
-  { num:12, recommended:false, name:"Equipment Borrowing System", desc:"Track borrowed equipment, borrower details, and return schedules.", fields:["BorrowId","EquipmentName","BorrowerName","BorrowDate","DueDate","Status"] },
-  { num:13, recommended:false, name:"Room Reservation Record System", desc:"A booking system for managing room reservations and availability.", fields:["ReservationId","RoomName","GuestName","CheckIn","CheckOut","Status"] },
-  { num:14, recommended:false, name:"Service Request Management System", desc:"Track internal or external service requests, assignees, and resolution status.", fields:["RequestId","RequestTitle","RequestedBy","AssignedTo","DateFiled","Status"] },
-  { num:15, recommended:false, name:"Vehicle Maintenance Record System", desc:"Log vehicle maintenance history, services done, and scheduled next service.", fields:["RecordId","VehicleName","PlateNumber","ServiceType","ServiceDate","NextSchedule"] }
-];
-
-const tracker = JSON.parse(localStorage.getItem('aspnet_tracker') || '{}');
-
-function getAvail(num) {
-  const d = tracker['p'+num] || {};
-  return { count:(d.g1?1:0)+(d.g2?1:0), g1:d.g1||'', g2:d.g2||'' };
-}
-
-function buildProjects() {
-  const list = document.getElementById('project-list');
-  projects.forEach(p => {
-    const av = getAvail(p.num);
-    const isFull = av.count >= 2;
-    const item = document.createElement('div');
-    item.className = 'project-item'+(p.recommended?' recommended':'')+(isFull?' taken':'');
-    let banner = '';
-    if(av.count===0) banner=`<div class="avail-banner open-banner"><div class="avail-dot"></div>Available — both slots open</div>`;
-    else if(av.count===1) banner=`<div class="avail-banner partial-banner"><div class="avail-dot"></div>1 slot remaining</div>`;
-    else banner=`<div class="avail-banner taken-banner"><div class="avail-dot"></div>Full — both slots taken</div>`;
-
-    item.innerHTML = `
-      <button class="project-trigger" onclick="toggleProject(this)">
-        <span class="project-num">${String(p.num).padStart(2,'0')}</span>
-        <span class="project-name">${p.recommended?'★ ':''}${p.name}</span>
-        <span class="badge ${isFull?'badge-red':p.recommended?'badge-blue':'badge-muted'}" style="margin:0;flex-shrink:0;">${isFull?'Full':p.recommended?'Recommended':'Available'}</span>
-        <span class="project-chevron">▼</span>
-      </button>
-      <div class="project-body">
-        <div class="project-body-inner">
-          <div>
-            <div class="pb-label">Description</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:1rem;">${p.desc}</div>
-            <div class="pb-label">Suggested Fields</div>
-            <div class="pb-tags">${p.fields.map(f=>`<span class="pb-tag">${f}</span>`).join('')}</div>
-          </div>
-          <div>
-            <div class="pb-label">Required CRUD Features</div>
-            <div class="pb-feat">Create — add new records</div>
-            <div class="pb-feat">Read — display record list</div>
-            <div class="pb-feat">Update — edit existing records</div>
-            <div class="pb-feat">Delete — remove records</div>
-            <div class="pb-feat">Validation on required fields</div>
-            <div class="pb-feat">Bootstrap-based interface</div>
-            ${banner}
-          </div>
-        </div>
-      </div>`;
-    list.appendChild(item);
-  });
-}
-
 function toggleProject(btn) { btn.closest('.project-item').classList.toggle('open'); }
 
-function buildAvail() {
-  const grid = document.getElementById('avail-grid');
-  projects.forEach(p => {
-    const av = getAvail(p.num);
-    const cls = av.count===0?'is-open':av.count===1?'is-partial':'is-full';
-    const pill = av.count===0?'pill-open':av.count===1?'pill-partial':'pill-full';
-    const pillTxt = av.count===0?'Open':av.count===1?'1 left':'Full';
-    const groupTxt = av.count===0?'No groups yet':av.count===1?`${av.g1||av.g2} + 1 open`:`${av.g1} · ${av.g2}`;
-    const el = document.createElement('div');
-    el.className = `avail-item ${cls}`;
-    el.innerHTML = `<span class="avail-name">${p.recommended?'★ ':''}${p.name}</span><span class="avail-groups">${groupTxt}</span><span class="avail-pill ${pill}">${pillTxt}</span>`;
-    grid.appendChild(el);
-  });
-}
-
-const claimCodes = ['ASP-ALPHA','ASP-BRAVO','ASP-CHARLIE','ASP-DELTA','ASP-ECHO','ASP-FOXTROT','ASP-GOLF','ASP-HOTEL','ASP-INDIA','ASP-JULIET','ASP-KILO','ASP-LIMA'];
-const appKey = 'aspnet_group_claims_v1';
-const activeGroupKey = 'aspnet_active_group_id';
-let app = JSON.parse(localStorage.getItem(appKey) || 'null') || { roster: [], groups: [], usedCodes: [] };
-let activeGroupId = localStorage.getItem(activeGroupKey) || '';
-let pendingProjectNum = null;
-
-function saveApp() { localStorage.setItem(appKey, JSON.stringify(app)); }
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-function getActiveGroup() { return app.groups.find(g => g.id === activeGroupId) || null; }
-function getProject(num) { return projects.find(p => p.num === Number(num)); }
-function getClaim(num) { return app.groups.find(g => g.titleNum === Number(num)); }
-function memberGroup(name) { return app.groups.find(g => g.members.some(m => m.toLowerCase() === name.toLowerCase())); }
-
-function claimGroupCode() {
-  const code = document.getElementById('claim-code').value.trim().toUpperCase();
-  const leader = document.getElementById('leader-name').value.trim();
-  const status = document.getElementById('claim-status');
-  if (!claimCodes.includes(code)) {
-    status.textContent = 'That claim code is not recognized.';
-    return;
-  }
-  if (!leader) {
-    status.textContent = 'Enter the group leader name first.';
-    return;
-  }
-  const existing = app.groups.find(g => g.code === code);
-  if (existing) {
-    if (existing.password) {
-      const entered = prompt('This group has already claimed a title. Enter the group password to continue.');
-      if (entered !== existing.password) {
-        status.textContent = 'Password did not match.';
-        return;
-      }
-    }
-    activeGroupId = existing.id;
-  } else {
-    if (app.groups.length >= 8) {
-      status.textContent = 'The intended 8 class groups are already opened. Use Teacher Admin to adjust.';
-      return;
-    }
-    const group = {
-      id: 'g' + Date.now(),
-      code,
-      name: 'Group ' + String.fromCharCode(65 + app.groups.length),
-      leader,
-      members: [leader],
-      titleNum: null,
-      password: ''
-    };
-    app.groups.push(group);
-    app.usedCodes.push(code);
-    activeGroupId = group.id;
-    saveApp();
-  }
-  localStorage.setItem(activeGroupKey, activeGroupId);
-  document.getElementById('claim-code').value = '';
-  document.getElementById('leader-name').value = '';
-  renderAll();
-}
-
-function leaveGroupDesk() {
-  activeGroupId = '';
-  localStorage.removeItem(activeGroupKey);
-  renderAll();
-}
-
-function renderGroupDesk() {
-  if (!document.getElementById('active-group')) return;
-  const group = getActiveGroup();
-  const active = document.getElementById('active-group');
-  const status = document.getElementById('claim-status');
-  if (!group) {
-    active.classList.remove('show');
-    status.textContent = 'No active group yet.';
-    return;
-  }
-  active.classList.add('show');
-  const title = group.titleNum ? getProject(group.titleNum).name : 'No title claimed yet';
-  status.innerHTML = `Active: <strong>${escapeHtml(group.name)}</strong>`;
-  document.getElementById('active-group-name').textContent = `${group.name} Desk`;
-  document.getElementById('active-group-meta').textContent = `${group.members.length}/6 members - ${title}`;
-  document.getElementById('title-session-note').textContent = group.password
-    ? 'This group has a title claim. Future access requires the group password.'
-    : 'Password is not required yet. It appears only when this group claims a title.';
-  renderCurrentMembers();
-  renderMemberSearch();
-}
-
-function renderCurrentMembers() {
-  const group = getActiveGroup();
-  const box = document.getElementById('current-members');
-  if (!group || !group.members.length) {
-    box.innerHTML = '<div class="muted-empty">No members yet.</div>';
-    return;
-  }
-  box.innerHTML = group.members.map(name => `
-    <div class="person-row">
-      <span>${escapeHtml(name)}</span>
-      <button class="btn btn-small" onclick="removeMember(decodeURIComponent('${encodeURIComponent(name)}'))">Remove</button>
-    </div>
-  `).join('');
-}
-
-function renderMemberSearch() {
-  const group = getActiveGroup();
-  const box = document.getElementById('member-results');
-  if (!group) return;
-  if (!app.roster.length) {
-    box.innerHTML = '<div class="muted-empty">Teacher Admin needs roster names before leaders can search.</div>';
-    return;
-  }
-  const q = document.getElementById('member-search').value.trim().toLowerCase();
-  const matches = app.roster.filter(name => !q || name.toLowerCase().includes(q)).slice(0, 8);
-  box.innerHTML = matches.map(name => {
-    const assigned = memberGroup(name);
-    const inThisGroup = group.members.some(m => m.toLowerCase() === name.toLowerCase());
-    const disabled = assigned && !inThisGroup;
-    const label = disabled ? `Already in ${assigned.name}` : inThisGroup ? 'Added' : 'Add';
-    return `
-      <div class="person-row ${disabled ? 'is-disabled' : ''}">
-        <span>${escapeHtml(name)}</span>
-        <button class="btn btn-small" ${disabled || inThisGroup || group.members.length >= 6 ? 'disabled' : ''} onclick="addMember(decodeURIComponent('${encodeURIComponent(name)}'))">${label}</button>
-      </div>
-    `;
-  }).join('') || '<div class="muted-empty">No matching students.</div>';
-}
-
-function addMember(name) {
-  const group = getActiveGroup();
-  if (!group || group.members.length >= 6 || memberGroup(name)) return;
-  group.members.push(name);
-  saveApp();
-  renderAll();
-}
-
-function openClaimDialog(num) {
-  const project = getProject(num);
-  const claim = getClaim(num);
-  if (claim) {
-    alert('That title has already been claimed.');
-    return;
-  }
-  pendingProjectNum = num;
-  document.getElementById('claim-project-summary').textContent = 'Review the title and enter the group claim code given by your teacher.';
-  document.getElementById('claim-project-details').innerHTML = `
-    <div class="badge ${project.recommended ? 'badge-blue' : 'badge-muted'}">${project.recommended ? 'Recommended' : 'Open title'}</div>
-    <div class="card-value">${escapeHtml(project.name)}</div>
-    <div class="card-sub">${escapeHtml(project.desc)}</div>
-    <div class="pb-tags" style="margin-top:0.75rem;">${project.fields.map(f => `<span class="pb-tag">${f}</span>`).join('')}</div>
-  `;
-  document.getElementById('claim-modal-status').textContent = '';
-  document.getElementById('claim-modal').classList.add('show');
-}
-
-function closeClaimDialog() {
-  pendingProjectNum = null;
-  document.getElementById('claim-modal').classList.remove('show');
-}
-
-function confirmProjectClaim() {
-  const project = getProject(pendingProjectNum);
-  const code = document.getElementById('claim-code-modal').value.trim().toUpperCase();
-  const status = document.getElementById('claim-modal-status');
-  if (!project) return;
-  if (!claimCodes.includes(code)) {
-    status.textContent = 'That claim code is not recognized.';
-    return;
-  }
-  if (getClaim(project.num)) {
-    status.textContent = 'That title was already claimed.';
-    renderAll();
-    return;
-  }
-  let group = app.groups.find(g => g.code === code);
-  if (group && group.titleNum) {
-    status.textContent = 'This code already has a claimed title.';
-    return;
-  }
-  if (!group) {
-    if (app.groups.length >= 8) {
-      status.textContent = 'The intended 8 class groups are already opened.';
-      return;
-    }
-    group = {
-      id: 'g' + Date.now(),
-      code,
-      name: 'Group ' + String.fromCharCode(65 + app.groups.length),
-      members: [],
-      titleNum: null,
-      password: '',
-      checklist: []
-    };
-    app.groups.push(group);
-    app.usedCodes.push(code);
-  }
-  const password = prompt(`Set a password for ${group.name}. This will be used for the dashboard.`, code.replace('ASP-', 'group-').toLowerCase());
-  if (!password) return;
-  group.titleNum = project.num;
-  group.password = password;
-  activeGroupId = group.id;
-  localStorage.setItem(activeGroupKey, activeGroupId);
-  saveApp();
-  closeClaimDialog();
-  renderAll();
-  openDashboardDialog(true);
-}
-
-function removeMember(name) {
-  const group = getActiveGroup();
-  if (!group) return;
-  group.members = group.members.filter(m => m !== name);
-  saveApp();
-  renderAll();
-}
-
-function openDashboardDialog(skipLogin) {
-  document.getElementById('dashboard-modal').classList.add('show');
-  const group = getActiveGroup();
-  if (skipLogin && group) {
-    document.getElementById('dashboard-login').style.display = 'none';
-    document.getElementById('dashboard-content').classList.add('show');
-    renderDashboard();
-  } else {
-    document.getElementById('dashboard-login').style.display = 'grid';
-    document.getElementById('dashboard-content').classList.remove('show');
-  }
-}
-
-function closeDashboardDialog() {
-  document.getElementById('dashboard-modal').classList.remove('show');
-}
-
-function loginDashboard() {
-  const code = document.getElementById('dashboard-code').value.trim().toUpperCase();
-  const password = document.getElementById('dashboard-pass').value;
-  const group = app.groups.find(g => g.code === code);
-  if (!group || !group.password || group.password !== password) {
-    alert('Code or password did not match a claimed group.');
-    return;
-  }
-  activeGroupId = group.id;
-  localStorage.setItem(activeGroupKey, activeGroupId);
-  document.getElementById('dashboard-login').style.display = 'none';
-  document.getElementById('dashboard-content').classList.add('show');
-  renderDashboard();
-}
-
 function showDashTab(tab) {
-  ['members','tracker','template'].forEach(name => {
+  ['members', 'tracker', 'template'].forEach(name => {
     document.getElementById('dash-' + name).classList.toggle('show', name === tab);
   });
-}
-
-function renderDashboard() {
-  const group = getActiveGroup();
-  if (!group || !group.titleNum) return;
-  const project = getProject(group.titleNum);
-  document.getElementById('dashboard-title').textContent = group.name + ' Dashboard';
-  document.getElementById('dashboard-meta').textContent = `${project.name} · ${group.members.length}/6 members`;
-  document.getElementById('dash-member-count').textContent = group.members.length;
-  document.getElementById('dash-title-num').textContent = String(group.titleNum).padStart(2, '0');
-  renderCurrentMembers();
-  renderMemberSearch();
-  renderGroupChecklist();
-}
-
-function renderGroupChecklist() {
-  const group = getActiveGroup();
-  const box = document.getElementById('group-checklist');
-  const items = [
-    'Members are complete',
-    'Proposal template downloaded',
-    'Purpose and target users written',
-    'Database fields planned',
-    'CRUD pages assigned',
-    'Validation rules listed',
-    'CP 1 proposal ready',
-    'CP 2 database/model ready',
-    'CP 3 create/read ready',
-    'CP 4 update/delete ready'
-  ];
-  group.checklist = group.checklist || [];
-  const done = group.checklist.filter(Boolean).length;
-  document.getElementById('dash-check-count').textContent = `${done}/${items.length}`;
-  box.innerHTML = items.map((item, i) => `
-    <div class="prop-item ${group.checklist[i] ? 'done' : ''}">
-      <input type="checkbox" class="prop-cb" ${group.checklist[i] ? 'checked' : ''} onchange="toggleGroupCheck(${i}, this.checked)">
-      <div class="prop-text">${item}</div>
-    </div>
-  `).join('');
-}
-
-function toggleGroupCheck(index, checked) {
-  const group = getActiveGroup();
-  group.checklist = group.checklist || [];
-  group.checklist[index] = checked;
-  saveApp();
-  renderGroupChecklist();
-}
-
-function downloadProposalTemplate() {
-  const group = getActiveGroup();
-  if (!group || !group.titleNum) return;
-  const project = getProject(group.titleNum);
-  const content = [
-    'ASP.NET MVC Final Project Proposal',
-    '',
-    `Group: ${group.name}`,
-    `Project Title: ${project.name}`,
-    `Members: ${group.members.join(', ')}`,
-    '',
-    '1. Purpose of the Application:',
-    '',
-    '2. Target Users:',
-    '',
-    '3. Planned Database Table and Fields:',
-    project.fields.map(f => `- ${f}`).join('\n'),
-    '',
-    '4. CRUD Features:',
-    '- Create:',
-    '- Read:',
-    '- Update:',
-    '- Delete:',
-    '',
-    '5. Validation Rules:',
-    '',
-    '6. Member Roles:',
-    '',
-    '7. Checkpoint Notes:'
-  ].join('\n');
-  const blob = new Blob([content], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${group.name.replace(/\s+/g, '_')}_proposal_template.txt`;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-function buildProjects() {
-  const list = document.getElementById('project-list');
-  list.innerHTML = '';
-  projects.forEach(p => {
-    const claim = getClaim(p.num);
-    const isTaken = Boolean(claim);
-    const item = document.createElement('div');
-    item.className = 'project-item'+(p.recommended?' recommended':'')+(isTaken?' taken':'');
-    const banner = isTaken
-      ? `<div class="avail-banner taken-banner"><div class="avail-dot"></div>Claimed by ${escapeHtml(claim.name)}</div>`
-      : `<div class="avail-banner open-banner"><div class="avail-dot"></div>Available to claim</div>`;
-    item.innerHTML = `
-      <button class="project-trigger" onclick="toggleProject(this)">
-        <span class="project-num">${String(p.num).padStart(2,'0')}</span>
-        <span class="project-name">${p.recommended?'* ':''}${p.name}</span>
-        <span class="badge ${isTaken?'badge-red':p.recommended?'badge-blue':'badge-muted'}" style="margin:0;flex-shrink:0;">${isTaken?'Claimed':p.recommended?'Recommended':'Open'}</span>
-        <span class="project-chevron">v</span>
-      </button>
-      <div class="project-body">
-        <div class="project-body-inner">
-          <div>
-            <div class="pb-label">Description</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:1rem;">${p.desc}</div>
-            <div class="pb-label">Suggested Fields</div>
-            <div class="pb-tags">${p.fields.map(f=>`<span class="pb-tag">${f}</span>`).join('')}</div>
-          </div>
-          <div>
-            <div class="pb-label">Required CRUD Features</div>
-            <div class="pb-feat">Create - add new records</div>
-            <div class="pb-feat">Read - display record list</div>
-            <div class="pb-feat">Update - edit existing records</div>
-            <div class="pb-feat">Delete - remove records</div>
-            <div class="pb-feat">Validation on required fields</div>
-            <div class="pb-feat">Bootstrap-based interface</div>
-            ${banner}
-            <div class="project-actions">
-              <button class="btn btn-primary" ${isTaken ? 'disabled' : ''} onclick="openClaimDialog(${p.num})">Claim Title</button>
-              <span class="claim-note">Optional. A short confirmation opens before anything is reserved.</span>
-            </div>
-          </div>
-        </div>
-      </div>`;
-    list.appendChild(item);
-  });
-}
-
-function claimProjectTitle(num) {
-  const group = getActiveGroup();
-  const project = getProject(num);
-  if (!group) {
-    alert('Open your group desk with a claim code first.');
-    document.getElementById('group-desk').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    return;
-  }
-  if (group.titleNum) {
-    alert('This group already claimed a title.');
-    return;
-  }
-  if (getClaim(num)) {
-    alert('That title has already been claimed.');
-    return;
-  }
-  if (!confirm(`Claim "${project.name}" for ${group.name}? This can only be changed by the teacher.`)) return;
-  const suggested = group.code.replace('ASP-', 'group-').toLowerCase();
-  const password = prompt('Set the group password for future access.', suggested);
-  if (!password) return;
-  group.titleNum = num;
-  group.password = password;
-  saveApp();
-  renderAll();
-  alert(`Title claimed. Group password: ${password}`);
-}
-
-function buildAvail() {
-  const grid = document.getElementById('avail-grid');
-  grid.innerHTML = '';
-  projects.forEach(p => {
-    const claim = getClaim(p.num);
-    const cls = claim ? 'is-full' : 'is-open';
-    const pill = claim ? 'pill-full' : 'pill-open';
-    const pillTxt = claim ? 'Claimed' : 'Open';
-    const groupTxt = claim ? claim.name : 'No group yet';
-    const el = document.createElement('div');
-    el.className = `avail-item ${cls}`;
-    el.innerHTML = `<span class="avail-name">${p.recommended?'* ':''}${p.name}</span><span class="avail-groups">${escapeHtml(groupTxt)}</span><span class="avail-pill ${pill}">${pillTxt}</span>`;
-    grid.appendChild(el);
-  });
-}
-
-function openAdmin() {
-  const pass = document.getElementById('admin-pass').value;
-  if (pass !== 'teacher123') {
-    alert('Default admin password is teacher123.');
-    return;
-  }
-  document.getElementById('admin-panel').classList.add('show');
-  renderAdmin();
-}
-
-function closeAdmin() { document.getElementById('admin-panel').classList.remove('show'); }
-
-function saveRoster() {
-  const names = document.getElementById('roster-input').value.split('\n').map(n => n.trim()).filter(Boolean);
-  app.roster = Array.from(new Set(names));
-  saveApp();
-  renderAll();
-  renderAdmin();
-}
-
-function loadSampleRoster() {
-  document.getElementById('roster-input').value = Array.from({length:43}, (_,i) => `Student ${String(i + 1).padStart(2,'0')}`).join('\n');
-  saveRoster();
-}
-
-function renderAdmin() {
-  document.getElementById('roster-input').value = app.roster.join('\n');
-  document.getElementById('sum-groups').textContent = app.groups.length;
-  document.getElementById('sum-claimed').textContent = app.groups.filter(g => g.titleNum).length;
-  document.getElementById('sum-codes').textContent = claimCodes.length - app.groups.length;
-  const assigned = new Set(app.groups.flatMap(g => g.members.map(m => m.toLowerCase())));
-  const ungrouped = app.roster.filter(name => !assigned.has(name.toLowerCase()));
-  document.getElementById('sum-ungrouped').textContent = ungrouped.length;
-  document.getElementById('ungrouped-list').innerHTML = ungrouped.map(name => `<div class="admin-row"><span>${escapeHtml(name)}</span></div>`).join('') || '<div class="muted-empty">No ungrouped students.</div>';
-  document.getElementById('admin-groups').innerHTML = app.groups.map(group => {
-    const title = group.titleNum ? getProject(group.titleNum).name : 'No title claimed';
-    const members = group.members.map(name => `
-      <div class="person-row">
-        <span>${escapeHtml(name)}</span>
-        <span>
-          <select onchange="moveMember(decodeURIComponent('${encodeURIComponent(name)}'), this.value)">
-            <option value="">Move to...</option>
-            ${app.groups.filter(g => g.id !== group.id).map(g => `<option value="${g.id}">${g.name}</option>`).join('')}
-          </select>
-        </span>
-      </div>
-    `).join('');
-    return `<div class="admin-row" style="display:block;">
-      <div style="display:flex;justify-content:space-between;gap:0.75rem;">
-        <strong>${escapeHtml(group.name)}</strong>
-        <span class="badge ${group.titleNum?'badge-green':'badge-muted'}" style="margin:0;">${escapeHtml(title)}</span>
-      </div>
-      <div style="font-size:12px;color:var(--muted);margin:4px 0 8px;">${group.code} · ${group.members.length}/6 members</div>
-      ${members || '<div class="muted-empty">No members.</div>'}
-    </div>`;
-  }).join('') || '<div class="muted-empty">No groups opened yet.</div>';
-}
-
-function moveMember(name, targetGroupId) {
-  if (!targetGroupId) return;
-  const target = app.groups.find(g => g.id === targetGroupId);
-  if (!target || target.members.length >= 6) {
-    alert('Target group is already full.');
-    renderAdmin();
-    return;
-  }
-  app.groups.forEach(g => { g.members = g.members.filter(m => m !== name); });
-  target.members.push(name);
-  saveApp();
-  renderAll();
-  renderAdmin();
-}
-
-function resetDemoData() {
-  if (!confirm('Reset all prototype group, roster, and title data in this browser?')) return;
-  localStorage.removeItem(appKey);
-  localStorage.removeItem(activeGroupKey);
-  app = { roster: [], groups: [], usedCodes: [] };
-  activeGroupId = '';
-  renderAll();
-  renderAdmin();
-}
-
-function renderAll() {
-  renderGroupDesk();
-  buildProjects();
-  buildAvail();
-  if (document.getElementById('dashboard-modal').classList.contains('show')) renderDashboard();
 }
 
 const propKey = 'aspnet_proposal_checklist';
@@ -1326,7 +621,6 @@ function updateProgress() {
   document.getElementById('progress-fill').style.width = `${(done/total)*100}%`;
 }
 
-renderAll();
 initProposal();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
