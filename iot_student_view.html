@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arduino IoT — Final Project</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141416;
+    --surface2: #1a1a1e;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0ede8;
+    --muted: #888580;
+    --accent: #10b981;
+    --accent2: #34d399;
+    --accent-dim: rgba(16,185,129,0.12);
+    --accent-dim2: rgba(16,185,129,0.06);
+    --accent-border: rgba(16,185,129,0.25);
+    --blue: #5b8def;
+    --blue-dim: rgba(91,141,239,0.1);
+    --amber: #f5c842;
+    --amber-dim: rgba(245,200,66,0.1);
+    --red: #f04747;
+    --red-dim: rgba(240,71,71,0.1);
+    --red-border: rgba(240,71,71,0.2);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.4;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 2rem 6rem; position: relative; z-index: 1; }
+
+  /* Header */
+  .header { padding: 4rem 0 3rem; border-bottom: 1px solid var(--border); margin-bottom: 3rem; }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 500; color: var(--muted); text-decoration: none;
+    margin-bottom: 1.5rem; transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--text); }
+  .header-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-dim);
+    border: 1px solid var(--accent-border); padding: 4px 12px; border-radius: 20px; margin-bottom: 1.25rem;
+  }
+  .header h1 { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 0.75rem; }
+  .header h1 span { color: var(--accent); }
+  .header p { color: var(--muted); font-size: 15px; max-width: 520px; font-weight: 300; }
+
+  /* Nav pills */
+  .nav-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 3rem; }
+  .nav-pill {
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 20px; cursor: pointer; text-decoration: none; transition: all 0.2s;
+  }
+  .nav-pill:hover { color: var(--text); border-color: var(--border2); }
+  .nav-pill.active { color: var(--accent); border-color: var(--accent-border); background: var(--accent-dim); }
+
+  /* Sections */
+  .section { margin-bottom: 3rem; }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
+  .section-num {
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+    color: var(--accent); background: var(--accent-dim);
+    width: 24px; height: 24px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; }
+  .card-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+  .card-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  .card-value { font-size: 14px; color: var(--text); font-weight: 500; }
+  .card-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  /* Badges */
+  .badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; margin-bottom: 6px; }
+  .badge-green { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(91,141,239,0.2); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,200,66,0.2); }
+  .badge-muted { background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid var(--border); }
+  .badge-red { background: var(--red-dim); color: var(--red); border: 1px solid var(--red-border); }
+
+  /* Check items */
+  .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); }
+  .check-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .check-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); margin-top: 8px; flex-shrink: 0; }
+
+  /* Check grid 2 cols */
+  .check-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .check-grid-2 .check-item { border-bottom: 1px solid var(--border); }
+
+  /* Grading rows */
+  .grade-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .grade-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .grade-label { color: var(--text); font-weight: 500; }
+  .grade-pct { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent); font-size: 15px; }
+
+  /* Note */
+  .note { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; font-size: 13px; color: var(--muted); margin-top: 0.75rem; }
+  .note strong { color: var(--text); }
+
+  /* Code box */
+  .code-box {
+    font-family: 'DM Mono', 'Fira Code', monospace; font-size: 13px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-border);
+    border-radius: 0 8px 8px 0; padding: 0.75rem 1rem;
+    color: var(--accent2); margin-top: 0.75rem; white-space: pre-wrap; word-break: break-word;
+  }
+
+  /* Numbered list */
+  .num-list { counter-reset: item; list-style: none; padding: 0; }
+  .num-list li { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .num-list li:last-child { border-bottom: none; }
+  .num-list li::before {
+    counter-increment: item;
+    content: counter(item);
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+    color: var(--accent); background: var(--accent-dim); border: 1px solid var(--accent-border);
+    width: 22px; height: 22px; border-radius: 5px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+
+  /* Bonus bullet */
+  .bonus-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); }
+  .bonus-item:last-child { border-bottom: none; }
+  .bonus-star { color: var(--amber); font-size: 13px; margin-top: 3px; flex-shrink: 0; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+  /* ---- GROUPS SECTION ---- */
+  .groups-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem;
+  }
+  .groups-note { font-size: 13px; color: var(--muted); }
+  .btn {
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--accent-border);
+    background: var(--accent-dim); color: var(--accent); cursor: pointer;
+    transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: rgba(16,185,129,0.2); border-color: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-outline {
+    background: transparent; border: 1px solid var(--border2); color: var(--muted);
+  }
+  .btn-outline:hover { border-color: var(--border2); color: var(--text); background: rgba(255,255,255,0.04); }
+  .btn-sm { font-size: 12px; padding: 5px 11px; }
+  .btn-danger { background: var(--red-dim); border-color: var(--red-border); color: var(--red); }
+  .btn-danger:hover { background: rgba(240,71,71,0.18); }
+
+  /* Group cards */
+  .groups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .group-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem; transition: border-color 0.2s;
+    display: flex; flex-direction: column; gap: 0.75rem;
+  }
+  .group-card:hover { border-color: var(--border2); }
+  .group-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+  .group-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); }
+  .group-count-badge {
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px; flex-shrink: 0;
+    background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border);
+  }
+  .group-count-badge.full { background: var(--red-dim); color: var(--red); border-color: var(--red-border); }
+  .group-title {
+    font-size: 13px; color: var(--muted); font-style: italic;
+  }
+  .group-title.set { color: var(--text); font-style: normal; font-weight: 500; }
+  .member-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+  .member-pill {
+    font-size: 11px; font-weight: 500; color: var(--muted);
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 2px 9px; border-radius: 20px;
+  }
+  .group-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; }
+
+  /* Empty state */
+  .groups-empty {
+    background: var(--surface); border: 1px dashed var(--border2);
+    border-radius: 12px; padding: 3rem 2rem; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 1rem;
+  }
+  .groups-empty-icon { font-size: 2.5rem; opacity: 0.3; }
+  .groups-empty-msg { font-size: 14px; color: var(--muted); }
+
+  /* Groups loading */
+  .groups-loading { text-align: center; padding: 2rem; color: var(--muted); font-size: 13px; }
+
+  /* Modal overlay */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 100; align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 16px; padding: 2rem; max-width: 440px; width: 100%;
+    position: relative; box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+  }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 0.4rem; }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 1.5rem; }
+  .modal-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1;
+    padding: 4px 8px; border-radius: 4px; transition: color 0.2s;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
+  .field input, .field textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 10px 12px; font-size: 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--muted); }
+
+  /* Search dropdown */
+  .search-dropdown {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 8px; margin-top: 4px; overflow: hidden;
+    max-height: 200px; overflow-y: auto;
+  }
+  .search-option {
+    padding: 9px 12px; font-size: 14px; cursor: pointer; transition: background 0.15s;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .search-option:hover { background: rgba(255,255,255,0.05); }
+  .search-option .assigned { font-size: 11px; color: var(--muted); }
+  .search-no-results { padding: 9px 12px; font-size: 13px; color: var(--muted); }
+
+  /* Modal footer */
+  .modal-footer { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem; }
+
+  /* Error / info inline */
+  .inline-error { font-size: 13px; color: var(--red); margin-top: 0.5rem; display: none; }
+  .inline-error.show { display: block; }
+  .inline-info { font-size: 13px; color: var(--muted); margin-top: 0.5rem; }
+
+  /* Selected student badge */
+  .selected-student {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--accent-dim); border: 1px solid var(--accent-border);
+    border-radius: 8px; padding: 8px 12px; font-size: 14px; margin-top: 8px;
+  }
+  .selected-student strong { color: var(--accent); }
+  .deselect-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0; }
+  .deselect-btn:hover { color: var(--text); }
+
+  /* Download button */
+  .download-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; padding: 10px 20px;
+    background: var(--accent-dim); border: 1px solid var(--accent-border);
+    color: var(--accent); border-radius: 8px; text-decoration: none; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .download-btn:hover { background: rgba(16,185,129,0.2); border-color: var(--accent); }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    .card-grid-3 { grid-template-columns: 1fr; }
+    .check-grid-2 { grid-template-columns: 1fr; }
+    .groups-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Header -->
+  <div class="header">
+    <a class="back-link" href="index.html">← Back to Hub</a>
+    <div class="header-tag">IoT / Arduino</div>
+    <h1>Arduino <span>IoT</span> Final Project</h1>
+    <p>Design and simulate an Arduino-based Mini Smart System using Tinkercad Circuits.</p>
+  </div>
+
+  <!-- Nav Pills -->
+  <nav class="nav-pills">
+    <a class="nav-pill active" href="#overview">Overview</a>
+    <a class="nav-pill" href="#requirements">Requirements</a>
+    <a class="nav-pill" href="#groups">Groups</a>
+    <a class="nav-pill" href="#bonus">Bonus</a>
+    <a class="nav-pill" href="#deliverables">Deliverables</a>
+    <a class="nav-pill" href="#documentation">Documentation</a>
+  </nav>
+
+  <!-- Section 01: Overview -->
+  <div class="section" id="overview">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-title">Overview</div>
+    </div>
+
+    <div class="card">
+      <p style="color:var(--text);font-size:15px;font-weight:400;line-height:1.7;">
+        Each group will design and simulate an <strong>Arduino-based Mini Smart System</strong> using <strong>Tinkercad Circuits</strong>. Your project must demonstrate the integration of sensors, components, and Arduino decision-making logic into one functional system that represents a real-world application.
+      </p>
+    </div>
+
+    <div class="card-grid-3" style="margin-top:0;">
+      <div class="card" style="margin:0;">
+        <div class="card-label">Stack</div>
+        <div class="card-value">Arduino UNO</div>
+        <div class="card-sub">C/C++ via Tinkercad</div>
+      </div>
+      <div class="card" style="margin:0;">
+        <div class="card-label">Tool</div>
+        <div class="card-value">Tinkercad Circuits</div>
+        <div class="card-sub">Free, browser-based</div>
+      </div>
+      <div class="card" style="margin:0;">
+        <div class="card-label">Grouping</div>
+        <div class="card-value">9 Groups</div>
+        <div class="card-sub">Up to 5 members each</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 02: Requirements -->
+  <div class="section" id="requirements">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-title">Requirements</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.75rem;">What your project must include</div>
+      <div class="check-grid-2">
+        <div class="check-item"><div class="check-dot"></div>At least 3 sensors or components</div>
+        <div class="check-item"><div class="check-dot"></div>Clear real-world purpose</div>
+        <div class="check-item"><div class="check-dot"></div>Working Arduino code</div>
+        <div class="check-item"><div class="check-dot"></div>Decision-making logic (if/else, loops)</div>
+        <div class="check-item"><div class="check-dot"></div>Comments throughout code</div>
+        <div class="check-item"><div class="check-dot"></div>Complete documentation</div>
+        <div class="check-item"><div class="check-dot"></div>Tinkercad share link</div>
+        <div class="check-item"><div class="check-dot"></div>Screenshot of completed circuit</div>
+        <div class="check-item"><div class="check-dot"></div>Screenshot of simulation running</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.75rem;">Grading Breakdown</div>
+      <div class="grade-row"><span class="grade-label">Circuit Design</span><span class="grade-pct">30%</span></div>
+      <div class="grade-row"><span class="grade-label">Arduino Code</span><span class="grade-pct">30%</span></div>
+      <div class="grade-row"><span class="grade-label">Documentation</span><span class="grade-pct">20%</span></div>
+      <div class="grade-row"><span class="grade-label">Presentation / Demo</span><span class="grade-pct">20%</span></div>
+    </div>
+  </div>
+
+  <!-- Section 03: Groups -->
+  <div class="section" id="groups">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div class="section-title">Your Groups</div>
+    </div>
+
+    <div class="groups-toolbar">
+      <span class="groups-note">Groups update live. Add your group or join an existing one.</span>
+      <button class="btn" onclick="openAddGroupModal()">+ Add Group</button>
+    </div>
+
+    <div id="groups-container">
+      <div class="groups-loading">Loading groups…</div>
+    </div>
+  </div>
+
+  <!-- Section 04: Bonus Points -->
+  <div class="section" id="bonus">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div class="section-title">Bonus Points</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.75rem;">Earn extra credit by including a bonus component</div>
+      <div class="bonus-item"><div class="bonus-star">★</div>A component not covered in class but available in Tinkercad</div>
+      <div class="bonus-item"><div class="bonus-star">★</div>Group understands and can explain what it does</div>
+      <div class="bonus-item"><div class="bonus-star">★</div>Properly integrated and functional within the circuit</div>
+      <div class="bonus-item"><div class="bonus-star">★</div>Meaningful to the system — not just decorative</div>
+    </div>
+
+    <div class="note">Bonus points are awarded at teacher's discretion during the demo/presentation.</div>
+  </div>
+
+  <!-- Section 05: Deliverables -->
+  <div class="section" id="deliverables">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div class="section-title">Deliverables</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.75rem;">Submit all of the following</div>
+      <ol class="num-list">
+        <li>Tinkercad share link (circuit must be shared publicly)</li>
+        <li>Screenshot of completed circuit</li>
+        <li>Screenshot of simulation running</li>
+        <li>Arduino code file (.ino)</li>
+        <li>Completed documentation file (.docx)</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.5rem;">Tinkercad Naming Format</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:0.5rem;">Name your Tinkercad circuit exactly as follows:</p>
+      <div class="code-box">Group [Number] - Final Project - [Project Title]</div>
+      <p style="font-size:12px;color:var(--muted);margin-top:0.75rem;">Example:</p>
+      <div class="code-box" style="color:var(--text);font-style:italic;">Group 3 - Final Project - Smart Storage Monitoring System</div>
+    </div>
+  </div>
+
+  <!-- Section 06: Documentation -->
+  <div class="section" id="documentation">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div class="section-title">Documentation Template</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.5rem;">Required Template</div>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:1.25rem;">
+        Download and use the official documentation template. Fill in all fields before your presentation.
+      </p>
+      <a class="download-btn" href="#" onclick="alert('Documentation template coming soon. Check back later.');return false;">
+        ↓ Download Documentation Template (.docx)
+      </a>
+      <div class="note" style="margin-top:1rem;">
+        <strong>Note:</strong> Incomplete or missing documentation will significantly affect your grade. Do not leave any section blank.
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.wrap -->
+
+<!-- ============================================================ -->
+<!-- Identity Modal -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="identity-modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeIdentityModal()">×</button>
+    <div class="modal-title">Identify Yourself</div>
+    <div class="modal-sub">Search for your name to continue. You only need to do this once per session.</div>
+
+    <div class="field">
+      <label for="identity-search">Your name</label>
+      <input type="text" id="identity-search" placeholder="Start typing your name…" autocomplete="off" oninput="onIdentitySearch(this.value)">
+    </div>
+
+    <div id="identity-dropdown"></div>
+    <div id="identity-selected"></div>
+
+    <div class="field" id="identity-id-field" style="display:none;">
+      <label for="identity-id-input">Your student ID number</label>
+      <input type="text" id="identity-id-input" placeholder="e.g. 3230618" maxlength="10" autocomplete="off">
+    </div>
+
+    <div class="inline-error" id="identity-error"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeIdentityModal()">Cancel</button>
+      <button class="btn" id="identity-confirm-btn" disabled onclick="confirmIdentityAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Add Group Modal -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="add-group-modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAddGroupModal()">×</button>
+    <div class="modal-title">Create a New Group</div>
+    <div class="modal-sub" id="add-group-identity-label">You will be added as the first member.</div>
+
+    <div class="field">
+      <label for="new-group-name">Group name <span style="color:var(--red)">*</span></label>
+      <input type="text" id="new-group-name" placeholder="e.g. Group 1" maxlength="60">
+    </div>
+    <div class="field">
+      <label for="new-group-title">Project title <span style="color:var(--muted);font-style:italic;">(optional)</span></label>
+      <input type="text" id="new-group-title" placeholder="e.g. Smart Storage Monitoring System" maxlength="120">
+    </div>
+
+    <div class="inline-error" id="add-group-error"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeAddGroupModal()">Cancel</button>
+      <button class="btn" id="add-group-submit-btn" onclick="submitCreateGroup()">Create Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Join Group Modal -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="join-group-modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeJoinModal()">×</button>
+    <div class="modal-title" id="join-modal-title">Join Group</div>
+    <div class="modal-sub" id="join-modal-sub">Confirm you want to join this group.</div>
+
+    <div class="inline-error" id="join-group-error"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeJoinModal()">Cancel</button>
+      <button class="btn" id="join-group-submit-btn" onclick="submitJoinGroup()">Join Group</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="iot_dashboard.js"></script>
+</body>
+</html>

@@ -29,9 +29,11 @@ create table if not exists public.students (
   id uuid primary key default gen_random_uuid(),
   section_id uuid not null references public.sections(id) on delete cascade,
   full_name text not null,
+  student_id_num text,
   created_at timestamptz not null default now(),
   unique (section_id, full_name)
 );
+alter table public.students add column if not exists student_id_num text;
 
 create table if not exists public.project_titles (
   id int primary key,
@@ -522,13 +524,29 @@ begin
 
   delete from public.students
   where section_id = p_section_id
-    and id not in (select student_id from public.group_members);
+    and id not in (
+      select student_id from public.group_members
+      union
+      select student_id from public.iot_group_members
+    );
 
-  insert into public.students (section_id, full_name)
-  select p_section_id, trim(name)
-  from unnest(p_names) as name
-  where trim(name) <> ''
-  on conflict (section_id, full_name) do nothing;
+  insert into public.students (section_id, full_name, student_id_num)
+  select
+    p_section_id,
+    case
+      when trim(entry) ~ '^[0-9]{6,8}\s+'
+      then trim(regexp_replace(trim(entry), '^[0-9]{6,8}\s+', ''))
+      else trim(entry)
+    end,
+    case
+      when trim(entry) ~ '^[0-9]{6,8}\s+'
+      then (regexp_match(trim(entry), '^([0-9]{6,8})'))[1]
+      else null
+    end
+  from unnest(p_names) as entry
+  where trim(entry) <> ''
+  on conflict (section_id, full_name) do update set
+    student_id_num = excluded.student_id_num;
 end;
 $$;
 
@@ -695,3 +713,371 @@ on conflict (id) do update set
 -- from auth.users
 -- where email = 'your-email@example.com'
 -- on conflict (id) do nothing;
+
+-- ============================================================
+-- IoT / Arduino Final Project Tables
+-- ============================================================
+
+create table if not exists public.iot_groups (
+  id uuid primary key default gen_random_uuid(),
+  section_id uuid not null references public.sections(id) on delete cascade,
+  name text not null,
+  project_title text not null default '',
+  created_at timestamptz not null default now(),
+  unique (section_id, name)
+);
+
+create table if not exists public.iot_group_members (
+  group_id uuid not null references public.iot_groups(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  primary key (group_id, student_id),
+  unique (student_id)
+);
+
+alter table public.iot_groups enable row level security;
+alter table public.iot_group_members enable row level security;
+
+-- ============================================================
+-- IoT RPCs
+-- ============================================================
+
+drop function if exists public.iot_verify_student_id(uuid, text);
+create function public.iot_verify_student_id(p_student_id uuid, p_student_id_num text)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.students
+    where id = p_student_id
+      and student_id_num is not null
+      and student_id_num = trim(p_student_id_num)
+  );
+$$;
+
+-- Helper: build groups array for a section
+create or replace function public._iot_groups_for_section(p_section_id uuid)
+returns jsonb
+language sql
+security definer
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(
+    jsonb_build_object(
+      'id', ig.id,
+      'name', ig.name,
+      'projectTitle', ig.project_title,
+      'memberCount', coalesce(mc.cnt, 0),
+      'members', coalesce(ml.members, '[]'::jsonb)
+    ) order by ig.created_at
+  ), '[]'::jsonb)
+  from public.iot_groups ig
+  left join (
+    select group_id, count(*) as cnt from public.iot_group_members group by group_id
+  ) mc on mc.group_id = ig.id
+  left join (
+    select igm.group_id,
+      jsonb_agg(jsonb_build_object('id', s.id, 'fullName', s.full_name) order by s.full_name) as members
+    from public.iot_group_members igm
+    join public.students s on s.id = igm.student_id
+    group by igm.group_id
+  ) ml on ml.group_id = ig.id
+  where ig.section_id = p_section_id;
+$$;
+
+-- iot_bootstrap: anon-accessible section + groups
+drop function if exists public.iot_bootstrap(text);
+create function public.iot_bootstrap(p_section_slug text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_section public.sections%rowtype;
+begin
+  select * into v_section from public.sections where slug = p_section_slug;
+  if not found then
+    raise exception 'Section not found';
+  end if;
+
+  return jsonb_build_object(
+    'section', jsonb_build_object(
+      'id', v_section.id,
+      'slug', v_section.slug,
+      'name', v_section.name,
+      'maxMembers', 5
+    ),
+    'groups', public._iot_groups_for_section(v_section.id)
+  );
+end;
+$$;
+
+-- iot_search_students: anon-accessible roster search
+drop function if exists public.iot_search_students(uuid, text);
+create function public.iot_search_students(p_section_id uuid, p_query text)
+returns jsonb
+language sql
+security definer
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(
+    jsonb_build_object(
+      'id', s.id,
+      'fullName', s.full_name,
+      'assignedGroup', ag.name
+    ) order by s.full_name
+  ), '[]'::jsonb)
+  from (
+    select s.id, s.full_name
+    from public.students s
+    where s.section_id = p_section_id
+      and (coalesce(p_query, '') = '' or s.full_name ilike '%' || p_query || '%')
+    order by s.full_name
+    limit 10
+  ) s
+  left join public.iot_group_members igm on igm.student_id = s.id
+  left join public.iot_groups ag on ag.id = igm.group_id;
+$$;
+
+-- iot_create_group: anon, verify student in section and not in group
+drop function if exists public.iot_create_group(uuid, uuid, text, text);
+drop function if exists public.iot_create_group(uuid, uuid, text, text, text);
+create function public.iot_create_group(
+  p_section_id uuid,
+  p_student_id uuid,
+  p_group_name text,
+  p_project_title text default '',
+  p_student_id_num text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group_id uuid;
+begin
+  -- Verify student belongs to section
+  if not exists (
+    select 1 from public.students where id = p_student_id and section_id = p_section_id
+  ) then
+    raise exception 'Student is not in this section';
+  end if;
+
+  -- Verify student ID number if the roster has IDs configured
+  if p_student_id_num is not null and exists (
+    select 1 from public.students where id = p_student_id and student_id_num is not null
+  ) then
+    if not public.iot_verify_student_id(p_student_id, p_student_id_num) then
+      raise exception 'Student ID number does not match. Please check your ID and try again.';
+    end if;
+  end if;
+
+  -- Verify student not already in an IoT group
+  if exists (
+    select 1 from public.iot_group_members igm
+    join public.iot_groups ig on ig.id = igm.group_id
+    where igm.student_id = p_student_id and ig.section_id = p_section_id
+  ) then
+    raise exception 'You are already in a group';
+  end if;
+
+  -- Validate group name
+  if trim(coalesce(p_group_name, '')) = '' then
+    raise exception 'Group name is required';
+  end if;
+
+  insert into public.iot_groups (section_id, name, project_title)
+  values (p_section_id, trim(p_group_name), coalesce(trim(p_project_title), ''))
+  returning id into v_group_id;
+
+  insert into public.iot_group_members (group_id, student_id) values (v_group_id, p_student_id);
+
+  return public._iot_groups_for_section(p_section_id);
+end;
+$$;
+
+-- iot_join_group: anon, verify in section, not in group, group < 5
+drop function if exists public.iot_join_group(uuid, uuid);
+drop function if exists public.iot_join_group(uuid, uuid, text);
+create function public.iot_join_group(p_group_id uuid, p_student_id uuid, p_student_id_num text default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.iot_groups%rowtype;
+  v_count int;
+begin
+  select * into v_group from public.iot_groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+
+  -- Verify student belongs to same section
+  if not exists (
+    select 1 from public.students where id = p_student_id and section_id = v_group.section_id
+  ) then
+    raise exception 'Student is not in this section';
+  end if;
+
+  -- Verify student ID number if roster has IDs
+  if p_student_id_num is not null and exists (
+    select 1 from public.students where id = p_student_id and student_id_num is not null
+  ) then
+    if not public.iot_verify_student_id(p_student_id, p_student_id_num) then
+      raise exception 'Student ID number does not match. Please check your ID and try again.';
+    end if;
+  end if;
+
+  -- Verify student not already in a group in this section
+  if exists (
+    select 1 from public.iot_group_members igm
+    join public.iot_groups ig on ig.id = igm.group_id
+    where igm.student_id = p_student_id and ig.section_id = v_group.section_id
+  ) then
+    raise exception 'You are already in a group';
+  end if;
+
+  -- Verify group not full (max 5)
+  select count(*) into v_count from public.iot_group_members where group_id = p_group_id;
+  if v_count >= 5 then raise exception 'Group is already full'; end if;
+
+  insert into public.iot_group_members (group_id, student_id) values (p_group_id, p_student_id);
+
+  return public._iot_groups_for_section(v_group.section_id);
+end;
+$$;
+
+-- iot_update_group_title: verify student is in the group
+drop function if exists public.iot_update_group_title(uuid, uuid, text);
+create function public.iot_update_group_title(
+  p_group_id uuid,
+  p_student_id uuid,
+  p_project_title text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.iot_groups%rowtype;
+begin
+  select * into v_group from public.iot_groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+
+  if not exists (
+    select 1 from public.iot_group_members
+    where group_id = p_group_id and student_id = p_student_id
+  ) then
+    raise exception 'You are not a member of this group';
+  end if;
+
+  update public.iot_groups set project_title = coalesce(trim(p_project_title), '') where id = p_group_id;
+
+  return public._iot_groups_for_section(v_group.section_id);
+end;
+$$;
+
+-- teacher_iot_section_detail: all IoT groups with members for teacher view
+drop function if exists public.teacher_iot_section_detail(uuid);
+create function public.teacher_iot_section_detail(p_section_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_section_teacher(p_section_id) then
+    raise exception 'Not allowed';
+  end if;
+  return public._iot_groups_for_section(p_section_id);
+end;
+$$;
+
+-- teacher_iot_remove_group
+drop function if exists public.teacher_iot_remove_group(uuid);
+create function public.teacher_iot_remove_group(p_group_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_section_id uuid;
+begin
+  select section_id into v_section_id from public.iot_groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+  if not public.is_section_teacher(v_section_id) then raise exception 'Not allowed'; end if;
+  delete from public.iot_groups where id = p_group_id;
+end;
+$$;
+
+-- teacher_iot_remove_member
+drop function if exists public.teacher_iot_remove_member(uuid, uuid);
+create function public.teacher_iot_remove_member(p_group_id uuid, p_student_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_section_id uuid;
+begin
+  select section_id into v_section_id from public.iot_groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+  if not public.is_section_teacher(v_section_id) then raise exception 'Not allowed'; end if;
+  delete from public.iot_group_members where group_id = p_group_id and student_id = p_student_id;
+  return public._iot_groups_for_section(v_section_id);
+end;
+$$;
+
+-- teacher_iot_update_group
+drop function if exists public.teacher_iot_update_group(uuid, text, text);
+create function public.teacher_iot_update_group(p_group_id uuid, p_name text, p_project_title text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_section_id uuid;
+begin
+  select section_id into v_section_id from public.iot_groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+  if not public.is_section_teacher(v_section_id) then raise exception 'Not allowed'; end if;
+  update public.iot_groups
+  set name = coalesce(trim(p_name), name),
+      project_title = coalesce(p_project_title, project_title)
+  where id = p_group_id;
+  return public._iot_groups_for_section(v_section_id);
+end;
+$$;
+
+-- teacher_iot_move_member
+drop function if exists public.teacher_iot_move_member(uuid, uuid);
+create function public.teacher_iot_move_member(p_student_id uuid, p_target_group_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_section uuid;
+  v_target public.iot_groups%rowtype;
+  v_count int;
+begin
+  select section_id into v_section from public.students where id = p_student_id;
+  select * into v_target from public.iot_groups where id = p_target_group_id;
+  if v_section is null or not found or v_target.section_id <> v_section then
+    raise exception 'Invalid move';
+  end if;
+  if not public.is_section_teacher(v_section) then raise exception 'Not allowed'; end if;
+  select count(*) into v_count from public.iot_group_members where group_id = p_target_group_id;
+  if v_count >= 5 then raise exception 'Target group is full'; end if;
+  delete from public.iot_group_members where student_id = p_student_id;
+  insert into public.iot_group_members (group_id, student_id) values (p_target_group_id, p_student_id);
+end;
+$$;

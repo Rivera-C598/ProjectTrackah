@@ -62,6 +62,7 @@
       return;
     }
     detail = await rpc("teacher_section_detail", { p_section_id: currentSectionId });
+    await loadIotGroups();
   }
 
   window.createSection = async function () {
@@ -188,6 +189,116 @@
 
   window.resetData = function () {
     alert("For Supabase, reset data from the Supabase Table Editor or SQL editor. Prototype local reset is disabled while Supabase is configured.");
+  };
+
+  // ----------------------------------------------------------------
+  // IoT Group Management
+  // ----------------------------------------------------------------
+
+  let iotGroups = [];
+
+  async function loadIotGroups() {
+    const container = document.getElementById("iot-groups-list");
+    if (!container) return;
+    if (!currentSectionId) {
+      container.innerHTML = '<div class="muted">Select a section to view IoT groups.</div>';
+      iotGroups = [];
+      return;
+    }
+    try {
+      iotGroups = await rpc("teacher_iot_section_detail", { p_section_id: currentSectionId });
+      renderIotRosterInfo();
+      renderIotGroups(iotGroups);
+    } catch (err) {
+      container.innerHTML = `<div class="muted">Could not load IoT groups: ${esc(err.message || "Unknown error")}</div>`;
+    }
+  }
+
+  function renderIotRosterInfo() {
+    const section = sections.find(s => s.id === currentSectionId);
+    const rosterCount = detail.students ? detail.students.length : 0;
+    const slug = section ? section.slug : "";
+    const infoEl = document.getElementById("iot-roster-info");
+    if (!infoEl) return;
+    if (!currentSectionId || !section) {
+      infoEl.innerHTML = "";
+      return;
+    }
+    infoEl.innerHTML = `
+      <div style="font-size:12px;color:var(--muted);margin-bottom:0.75rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;">
+        <span>Roster: <strong style="color:var(--text);">${rosterCount} student${rosterCount !== 1 ? "s" : ""}</strong> — IoT identity search uses this section's roster. Upload or edit it in the Roster card above.</span>
+        <span>Student URL: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:11px;">iot_student_view.html?section=${esc(slug)}</code></span>
+      </div>`;
+  }
+
+  function renderIotGroups(groups) {
+    const container = document.getElementById("iot-groups-list");
+    if (!container) return;
+    if (!groups || groups.length === 0) {
+      container.innerHTML = '<div class="muted">No IoT groups yet for this section.</div>';
+      return;
+    }
+    container.innerHTML = groups.map(g => {
+      const memberRows = (g.members && g.members.length > 0)
+        ? g.members.map(m => `
+            <div class="row" style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
+              <span style="font-size:13px;">${esc(m.fullName)}</span>
+              <button class="btn btn-danger btn-small" onclick="removeIotMember('${esc(g.id)}', '${esc(m.id)}', '${esc(m.fullName)}')">Remove</button>
+            </div>`).join("")
+        : '<div class="muted" style="font-size:13px;">No members</div>';
+
+      return `
+      <div class="row" style="display:block;margin-bottom:0.75rem;border:1px solid var(--border);border-radius:8px;padding:0.75rem 1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+          <div>
+            <input id="iot-name-${esc(g.id)}" value="${esc(g.name)}" style="width:auto;min-width:120px;font-size:14px;font-weight:600;padding:3px 7px;">
+            <input id="iot-title-${esc(g.id)}" value="${esc(g.projectTitle || '')}" placeholder="Project title…" style="width:auto;min-width:180px;font-size:13px;padding:3px 7px;margin-left:6px;">
+          </div>
+          <div style="display:flex;gap:0.5rem;">
+            <button class="btn btn-small" onclick="updateIotGroup('${esc(g.id)}')">Save</button>
+            <button class="btn btn-danger btn-small" onclick="removeIotGroup('${esc(g.id)}', '${esc(g.name)}')">Remove Group</button>
+          </div>
+        </div>
+        <div class="muted" style="font-size:12px;margin-bottom:0.5rem;">${g.memberCount || 0} / 5 members</div>
+        ${memberRows}
+      </div>`;
+    }).join("");
+  }
+
+  window.removeIotGroup = async function (groupId, groupName) {
+    if (!confirm(`Remove IoT group "${groupName}"? This cannot be undone.`)) return;
+    try {
+      await rpc("teacher_iot_remove_group", { p_group_id: groupId });
+      await loadIotGroups();
+    } catch (err) {
+      alert(err.message || "Could not remove IoT group.");
+    }
+  };
+
+  window.removeIotMember = async function (groupId, studentId, studentName) {
+    if (!confirm(`Remove "${studentName}" from this IoT group?`)) return;
+    try {
+      iotGroups = await rpc("teacher_iot_remove_member", { p_group_id: groupId, p_student_id: studentId });
+      renderIotGroups(iotGroups);
+    } catch (err) {
+      alert(err.message || "Could not remove member.");
+    }
+  };
+
+  window.updateIotGroup = async function (groupId) {
+    const name = document.getElementById("iot-name-" + groupId)?.value?.trim();
+    const title = document.getElementById("iot-title-" + groupId)?.value?.trim();
+    if (!name) { alert("Group name cannot be empty."); return; }
+    try {
+      iotGroups = await rpc("teacher_iot_update_group", {
+        p_group_id: groupId,
+        p_name: name,
+        p_project_title: title || ""
+      });
+      renderIotGroups(iotGroups);
+    } catch (err) {
+      alert(err.message || "Could not update IoT group.");
+    }
   };
 
   function render() {

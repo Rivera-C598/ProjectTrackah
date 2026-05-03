@@ -23,6 +23,11 @@
     --php-accent-dim: rgba(232,97,26,0.12);
     --php-accent-border: rgba(232,97,26,0.25);
     --php-glow: rgba(232,97,26,0.08);
+
+    --iot-accent: #10b981;
+    --iot-accent-dim: rgba(16,185,129,0.12);
+    --iot-accent-border: rgba(16,185,129,0.25);
+    --iot-glow: rgba(16,185,129,0.08);
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
@@ -59,7 +64,7 @@
     color: var(--muted); font-size: 15px; font-weight: 300; max-width: 400px; margin: 0 auto 3.5rem;
   }
 
-  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
 
   .card {
     display: flex; flex-direction: column;
@@ -75,11 +80,14 @@
   }
   .card-asp .card-glow { background: radial-gradient(circle, var(--asp-glow) 0%, transparent 70%); }
   .card-php .card-glow { background: radial-gradient(circle, var(--php-glow) 0%, transparent 70%); }
+  .card-iot .card-glow { background: radial-gradient(circle, var(--iot-glow) 0%, transparent 70%); }
 
   .card-asp { border-color: var(--asp-accent-border); }
   .card-php { border-color: var(--php-accent-border); }
+  .card-iot { border-color: var(--iot-accent-border); }
   .card-asp:hover { border-color: var(--asp-accent); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(26,78,216,0.12); }
   .card-php:hover { border-color: var(--php-accent); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(232,97,26,0.12); }
+  .card-iot:hover { border-color: var(--iot-accent); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(16,185,129,0.12); }
 
   .card-label {
     display: inline-flex; align-items: center; gap: 6px;
@@ -89,6 +97,7 @@
   }
   .card-asp .card-label { background: var(--asp-accent-dim); color: var(--asp-accent); border: 1px solid var(--asp-accent-border); }
   .card-php .card-label { background: var(--php-accent-dim); color: var(--php-accent); border: 1px solid var(--php-accent-border); }
+  .card-iot .card-label { background: var(--iot-accent-dim); color: var(--iot-accent); border: 1px solid var(--iot-accent-border); }
 
   .card-title { font-family: 'Syne', sans-serif; font-size: 1.35rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.6rem; }
   .card-desc { font-size: 13px; color: var(--muted); font-weight: 300; line-height: 1.55; flex: 1; }
@@ -100,10 +109,14 @@
   }
   .card-asp .card-arrow { color: var(--asp-accent); }
   .card-php .card-arrow { color: var(--php-accent); }
+  .card-iot .card-arrow { color: var(--iot-accent); }
   .card:hover .card-arrow { gap: 10px; }
 
   .footer { margin-top: 3rem; font-size: 12px; color: var(--muted); }
 
+  @media (max-width: 720px) {
+    .cards { grid-template-columns: 1fr 1fr; }
+  }
   @media (max-width: 520px) {
     .cards { grid-template-columns: 1fr; }
     h1 { font-size: 2rem; }
@@ -129,6 +142,13 @@
       <div class="card-label">PHP + MySQL</div>
       <div class="card-title">PHP + MySQL<br>Final Project</div>
       <div class="card-desc">Requirements, project title options</div>
+      <div class="card-arrow">Open →</div>
+    </a>
+    <a class="card card-iot" href="iot_student_view.html?section=bsit-3a">
+      <div class="card-glow"></div>
+      <div class="card-label">IoT / Arduino</div>
+      <div class="card-title">Arduino IoT<br>Final Project</div>
+      <div class="card-desc">Project briefing, group tracker, and documentation</div>
       <div class="card-arrow">Open →</div>
     </a>
   </div>
