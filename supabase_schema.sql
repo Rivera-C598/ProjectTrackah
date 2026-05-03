@@ -1,0 +1,601 @@
+create extension if not exists pgcrypto;
+
+create table if not exists public.teacher_profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text not null unique,
+  display_name text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.sections (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique check (slug ~ '^[a-z0-9][a-z0-9-]*$'),
+  name text not null,
+  max_groups int not null default 8 check (max_groups between 1 and 40),
+  max_members int not null default 6 check (max_members between 1 and 12),
+  created_by uuid references public.teacher_profiles(id),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.section_teachers (
+  section_id uuid not null references public.sections(id) on delete cascade,
+  teacher_id uuid not null references public.teacher_profiles(id) on delete cascade,
+  role text not null default 'teacher' check (role in ('owner', 'teacher')),
+  created_at timestamptz not null default now(),
+  primary key (section_id, teacher_id)
+);
+
+create table if not exists public.students (
+  id uuid primary key default gen_random_uuid(),
+  section_id uuid not null references public.sections(id) on delete cascade,
+  full_name text not null,
+  created_at timestamptz not null default now(),
+  unique (section_id, full_name)
+);
+
+create table if not exists public.project_titles (
+  id int primary key,
+  name text not null,
+  description text not null,
+  recommended boolean not null default false,
+  fields text[] not null default '{}'
+);
+
+create table if not exists public.claim_codes (
+  id uuid primary key default gen_random_uuid(),
+  section_id uuid not null references public.sections(id) on delete cascade,
+  code text not null,
+  used_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (section_id, code)
+);
+
+create table if not exists public.groups (
+  id uuid primary key default gen_random_uuid(),
+  section_id uuid not null references public.sections(id) on delete cascade,
+  code_id uuid not null unique references public.claim_codes(id),
+  name text not null,
+  password_hash text not null,
+  project_title_id int not null references public.project_titles(id),
+  created_at timestamptz not null default now(),
+  unique (section_id, name),
+  unique (section_id, project_title_id)
+);
+
+create table if not exists public.group_members (
+  group_id uuid not null references public.groups(id) on delete cascade,
+  student_id uuid not null references public.students(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (group_id, student_id),
+  unique (student_id)
+);
+
+create table if not exists public.group_checklist (
+  group_id uuid not null references public.groups(id) on delete cascade,
+  item_key text not null,
+  done boolean not null default false,
+  updated_at timestamptz not null default now(),
+  primary key (group_id, item_key)
+);
+
+alter table public.teacher_profiles enable row level security;
+alter table public.sections enable row level security;
+alter table public.section_teachers enable row level security;
+alter table public.students enable row level security;
+alter table public.project_titles enable row level security;
+alter table public.claim_codes enable row level security;
+alter table public.groups enable row level security;
+alter table public.group_members enable row level security;
+alter table public.group_checklist enable row level security;
+
+drop policy if exists "teachers read own profile" on public.teacher_profiles;
+create policy "teachers read own profile" on public.teacher_profiles
+  for select to authenticated using (id = auth.uid());
+
+drop policy if exists "project titles public read" on public.project_titles;
+create policy "project titles public read" on public.project_titles
+  for select to anon, authenticated using (true);
+
+drop policy if exists "teachers read their sections" on public.sections;
+create policy "teachers read their sections" on public.sections
+  for select to authenticated using (
+    exists (
+      select 1 from public.section_teachers st
+      where st.section_id = sections.id and st.teacher_id = auth.uid()
+    )
+  );
+
+drop policy if exists "teachers read section links" on public.section_teachers;
+create policy "teachers read section links" on public.section_teachers
+  for select to authenticated using (teacher_id = auth.uid());
+
+drop function if exists public.is_section_teacher(uuid);
+create function public.is_section_teacher(p_section_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.section_teachers
+    where section_id = p_section_id and teacher_id = auth.uid()
+  );
+$$;
+
+drop function if exists public.bootstrap_section(text);
+create function public.bootstrap_section(p_section_slug text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_section public.sections%rowtype;
+begin
+  select * into v_section from public.sections where slug = p_section_slug;
+  if not found then
+    raise exception 'Section not found';
+  end if;
+
+  return jsonb_build_object(
+    'section', jsonb_build_object(
+      'id', v_section.id,
+      'slug', v_section.slug,
+      'name', v_section.name,
+      'maxGroups', v_section.max_groups,
+      'maxMembers', v_section.max_members
+    ),
+    'projects', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'id', pt.id,
+        'name', pt.name,
+        'description', pt.description,
+        'recommended', pt.recommended,
+        'fields', pt.fields,
+        'claimedBy', g.name
+      ) order by pt.id)
+      from public.project_titles pt
+      left join public.groups g on g.section_id = v_section.id and g.project_title_id = pt.id
+    ), '[]'::jsonb)
+  );
+end;
+$$;
+
+drop function if exists public.claim_project_title(text, text, int, text);
+create function public.claim_project_title(
+  p_section_slug text,
+  p_code text,
+  p_project_title_id int,
+  p_password text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_section public.sections%rowtype;
+  v_code public.claim_codes%rowtype;
+  v_group public.groups%rowtype;
+  v_group_count int;
+  v_group_name text;
+begin
+  if length(coalesce(p_password, '')) < 4 then
+    raise exception 'Password must be at least 4 characters';
+  end if;
+
+  select * into v_section from public.sections where slug = p_section_slug;
+  if not found then raise exception 'Section not found'; end if;
+
+  select * into v_code
+  from public.claim_codes
+  where section_id = v_section.id and upper(code) = upper(trim(p_code))
+  for update;
+  if not found then raise exception 'Claim code not found'; end if;
+  if v_code.used_at is not null then raise exception 'Claim code already used'; end if;
+
+  if exists (
+    select 1 from public.groups
+    where section_id = v_section.id and project_title_id = p_project_title_id
+  ) then
+    raise exception 'Project title already claimed';
+  end if;
+
+  select count(*) into v_group_count from public.groups where section_id = v_section.id;
+  if v_group_count >= v_section.max_groups then
+    raise exception 'Maximum groups reached for this section';
+  end if;
+
+  v_group_name := 'Group ' || chr(65 + v_group_count);
+
+  insert into public.groups (section_id, code_id, name, password_hash, project_title_id)
+  values (
+    v_section.id,
+    v_code.id,
+    v_group_name,
+    crypt(p_password, gen_salt('bf')),
+    p_project_title_id
+  )
+  returning * into v_group;
+
+  update public.claim_codes set used_at = now() where id = v_code.id;
+
+  return jsonb_build_object(
+    'id', v_group.id,
+    'name', v_group.name,
+    'projectTitleId', v_group.project_title_id
+  );
+end;
+$$;
+
+drop function if exists public.login_group(text, text, text);
+create function public.login_group(p_section_slug text, p_code text, p_password text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.groups%rowtype;
+  v_section public.sections%rowtype;
+begin
+  select * into v_section from public.sections where slug = p_section_slug;
+  if not found then raise exception 'Section not found'; end if;
+
+  select g.* into v_group
+  from public.groups g
+  join public.claim_codes cc on cc.id = g.code_id
+  where g.section_id = v_section.id and upper(cc.code) = upper(trim(p_code));
+  if not found or v_group.password_hash <> crypt(p_password, v_group.password_hash) then
+    raise exception 'Invalid group code or password';
+  end if;
+
+  return public.group_dashboard(v_group.id);
+end;
+$$;
+
+drop function if exists public.group_dashboard(uuid);
+create function public.group_dashboard(p_group_id uuid)
+returns jsonb
+language sql
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'group', jsonb_build_object(
+      'id', g.id,
+      'name', g.name,
+      'projectTitleId', g.project_title_id,
+      'projectTitle', pt.name,
+      'projectDescription', pt.description,
+      'projectFields', pt.fields
+    ),
+    'members', coalesce((
+      select jsonb_agg(jsonb_build_object('id', s.id, 'fullName', s.full_name) order by s.full_name)
+      from public.group_members gm
+      join public.students s on s.id = gm.student_id
+      where gm.group_id = g.id
+    ), '[]'::jsonb),
+    'checklist', coalesce((
+      select jsonb_object_agg(item_key, done)
+      from public.group_checklist
+      where group_id = g.id
+    ), '{}'::jsonb)
+  )
+  from public.groups g
+  join public.project_titles pt on pt.id = g.project_title_id
+  where g.id = p_group_id;
+$$;
+
+drop function if exists public.search_section_students(uuid, text);
+drop function if exists public.search_section_students(uuid, text, text);
+create function public.search_section_students(p_group_id uuid, p_password text, p_query text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.groups%rowtype;
+begin
+  select * into v_group from public.groups where id = p_group_id;
+  if not found or v_group.password_hash <> crypt(p_password, v_group.password_hash) then
+    raise exception 'Invalid dashboard session';
+  end if;
+
+  return (
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'id', ranked.id,
+      'fullName', ranked.full_name,
+      'assignedGroup', ranked.assigned_group
+    ) order by ranked.full_name), '[]'::jsonb)
+    from (
+      select s.id, s.full_name, ag.name as assigned_group
+      from public.students s
+      left join public.group_members gm on gm.student_id = s.id
+      left join public.groups ag on ag.id = gm.group_id
+      where s.section_id = v_group.section_id
+        and (coalesce(p_query, '') = '' or s.full_name ilike '%' || p_query || '%')
+      order by s.full_name
+      limit 12
+    ) ranked
+  );
+end;
+$$;
+
+drop function if exists public.add_group_member(uuid, uuid);
+drop function if exists public.add_group_member(uuid, uuid, text);
+create function public.add_group_member(p_group_id uuid, p_student_id uuid, p_password text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.groups%rowtype;
+  v_student public.students%rowtype;
+  v_count int;
+  v_max int;
+begin
+  select * into v_group from public.groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+  if v_group.password_hash <> crypt(p_password, v_group.password_hash) then
+    raise exception 'Invalid dashboard session';
+  end if;
+  select * into v_student from public.students where id = p_student_id;
+  if not found or v_student.section_id <> v_group.section_id then
+    raise exception 'Student is not in this section';
+  end if;
+  if exists (select 1 from public.group_members where student_id = p_student_id) then
+    raise exception 'Student already has a group';
+  end if;
+  select max_members into v_max from public.sections where id = v_group.section_id;
+  select count(*) into v_count from public.group_members where group_id = p_group_id;
+  if v_count >= v_max then raise exception 'Group is already full'; end if;
+
+  insert into public.group_members (group_id, student_id) values (p_group_id, p_student_id);
+  return public.group_dashboard(p_group_id);
+end;
+$$;
+
+drop function if exists public.remove_group_member(uuid, uuid);
+drop function if exists public.remove_group_member(uuid, uuid, text);
+create function public.remove_group_member(p_group_id uuid, p_student_id uuid, p_password text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.groups%rowtype;
+begin
+  select * into v_group from public.groups where id = p_group_id;
+  if not found or v_group.password_hash <> crypt(p_password, v_group.password_hash) then
+    raise exception 'Invalid dashboard session';
+  end if;
+  delete from public.group_members where group_id = p_group_id and student_id = p_student_id;
+  return public.group_dashboard(p_group_id);
+end;
+$$;
+
+drop function if exists public.set_group_checklist(uuid, text, boolean);
+drop function if exists public.set_group_checklist(uuid, text, boolean, text);
+create function public.set_group_checklist(p_group_id uuid, p_item_key text, p_done boolean, p_password text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.groups%rowtype;
+begin
+  select * into v_group from public.groups where id = p_group_id;
+  if not found or v_group.password_hash <> crypt(p_password, v_group.password_hash) then
+    raise exception 'Invalid dashboard session';
+  end if;
+  insert into public.group_checklist (group_id, item_key, done, updated_at)
+  values (p_group_id, p_item_key, p_done, now())
+  on conflict (group_id, item_key)
+  do update set done = excluded.done, updated_at = now();
+  return public.group_dashboard(p_group_id);
+end;
+$$;
+
+drop function if exists public.teacher_bootstrap();
+create function public.teacher_bootstrap()
+returns jsonb
+language sql
+security definer
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id', s.id,
+    'slug', s.slug,
+    'name', s.name,
+    'maxGroups', s.max_groups,
+    'maxMembers', s.max_members
+  ) order by s.name), '[]'::jsonb)
+  from public.sections s
+  join public.section_teachers st on st.section_id = s.id
+  where st.teacher_id = auth.uid();
+$$;
+
+drop function if exists public.teacher_section_detail(uuid);
+create function public.teacher_section_detail(p_section_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_section_teacher(p_section_id) then
+    raise exception 'Not allowed';
+  end if;
+
+  return jsonb_build_object(
+    'students', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'id', s.id,
+        'fullName', s.full_name,
+        'groupName', g.name
+      ) order by s.full_name)
+      from public.students s
+      left join public.group_members gm on gm.student_id = s.id
+      left join public.groups g on g.id = gm.group_id
+      where s.section_id = p_section_id
+    ), '[]'::jsonb),
+    'codes', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'id', cc.id,
+        'code', cc.code,
+        'used', cc.used_at is not null,
+        'groupName', g.name
+      ) order by cc.code)
+      from public.claim_codes cc
+      left join public.groups g on g.code_id = cc.id
+      where cc.section_id = p_section_id
+    ), '[]'::jsonb),
+    'groups', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'id', g.id,
+        'name', g.name,
+        'projectTitle', pt.name,
+        'members', coalesce((
+          select jsonb_agg(s.full_name order by s.full_name)
+          from public.group_members gm
+          join public.students s on s.id = gm.student_id
+          where gm.group_id = g.id
+        ), '[]'::jsonb)
+      ) order by g.name)
+      from public.groups g
+      join public.project_titles pt on pt.id = g.project_title_id
+      where g.section_id = p_section_id
+    ), '[]'::jsonb)
+  );
+end;
+$$;
+
+drop function if exists public.teacher_create_section(text, text, int, int);
+create function public.teacher_create_section(p_name text, p_slug text, p_max_groups int default 8, p_max_members int default 6)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_teacher public.teacher_profiles%rowtype;
+  v_section public.sections%rowtype;
+begin
+  select * into v_teacher from public.teacher_profiles where id = auth.uid();
+  if not found then raise exception 'Teacher profile not allowed'; end if;
+
+  insert into public.sections (name, slug, max_groups, max_members, created_by)
+  values (p_name, p_slug, p_max_groups, p_max_members, auth.uid())
+  returning * into v_section;
+
+  insert into public.section_teachers (section_id, teacher_id, role)
+  values (v_section.id, auth.uid(), 'owner');
+
+  return jsonb_build_object('id', v_section.id, 'name', v_section.name, 'slug', v_section.slug);
+end;
+$$;
+
+drop function if exists public.teacher_replace_roster(uuid, text[]);
+create function public.teacher_replace_roster(p_section_id uuid, p_names text[])
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_section_teacher(p_section_id) then raise exception 'Not allowed'; end if;
+
+  delete from public.students
+  where section_id = p_section_id
+    and id not in (select student_id from public.group_members);
+
+  insert into public.students (section_id, full_name)
+  select p_section_id, trim(name)
+  from unnest(p_names) as name
+  where trim(name) <> ''
+  on conflict (section_id, full_name) do nothing;
+end;
+$$;
+
+drop function if exists public.teacher_generate_codes(uuid, int);
+create function public.teacher_generate_codes(p_section_id uuid, p_count int default 12)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  i int;
+  v_code text;
+begin
+  if not public.is_section_teacher(p_section_id) then raise exception 'Not allowed'; end if;
+  for i in 1..p_count loop
+    v_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 4) || '-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 4));
+    insert into public.claim_codes (section_id, code)
+    values (p_section_id, v_code)
+    on conflict do nothing;
+  end loop;
+end;
+$$;
+
+drop function if exists public.teacher_move_member(uuid, uuid);
+create function public.teacher_move_member(p_student_id uuid, p_target_group_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_section uuid;
+  v_target public.groups%rowtype;
+  v_count int;
+  v_max int;
+begin
+  select section_id into v_section from public.students where id = p_student_id;
+  select * into v_target from public.groups where id = p_target_group_id;
+  if v_section is null or not found or v_target.section_id <> v_section then
+    raise exception 'Invalid move';
+  end if;
+  if not public.is_section_teacher(v_section) then raise exception 'Not allowed'; end if;
+  select max_members into v_max from public.sections where id = v_section;
+  select count(*) into v_count from public.group_members where group_id = p_target_group_id;
+  if v_count >= v_max then raise exception 'Target group is full'; end if;
+  delete from public.group_members where student_id = p_student_id;
+  insert into public.group_members (group_id, student_id) values (p_target_group_id, p_student_id);
+end;
+$$;
+
+insert into public.project_titles (id, recommended, name, description, fields) values
+  (1, true, 'Student Record Management System', 'A system for managing student information including personal details, enrollment status, and academic records.', array['StudentId','FirstName','LastName','Course','Year','Status']),
+  (2, true, 'Product Inventory Management System', 'An admin panel for tracking product stock, pricing, and category information.', array['ProductId','ProductName','Category','Quantity','Price','Status']),
+  (3, true, 'Employee Record Management System', 'A system for managing employee profiles, departments, and employment status.', array['EmployeeId','FullName','Department','Position','DateHired','Status']),
+  (4, true, 'Appointment Record Management System', 'A booking and scheduling system for managing appointments with clients or patients.', array['AppointmentId','ClientName','Service','Date','Time','Status']),
+  (5, false, 'Customer Information Management System', 'A CRM-lite system for tracking customer details and contact information.', array['CustomerId','Name','Email','Phone','Address','DateAdded']),
+  (6, false, 'Book Inventory Management System', 'A library or bookstore tool for managing book titles, authors, stock, and categories.', array['BookId','Title','Author','Genre','Quantity','Price']),
+  (7, false, 'Clinic Patient Record System', 'A patient records system for a small clinic tracking consultations and diagnoses.', array['PatientId','Name','Age','Gender','Diagnosis','VisitDate']),
+  (8, false, 'Supplier Management System', 'Track supplier details, product categories they supply, and contact information.', array['SupplierId','SupplierName','ContactPerson','Email','Phone','Category']),
+  (9, false, 'Sales Item Record System', 'A simple sales tracking tool for logging items sold, quantities, and totals.', array['SaleId','ItemName','Category','Quantity','UnitPrice','SaleDate']),
+  (10, false, 'Simple Ordering Record System', 'Track customer orders, ordered items, and order status for a small business.', array['OrderId','CustomerName','Item','Quantity','TotalAmount','Status']),
+  (11, false, 'Library Borrower Record System', 'Manage book borrow and return transactions for a school or community library.', array['BorrowId','BorrowerName','BookTitle','BorrowDate','ReturnDate','Status']),
+  (12, false, 'Equipment Borrowing System', 'Track borrowed equipment, borrower details, and return schedules.', array['BorrowId','EquipmentName','BorrowerName','BorrowDate','DueDate','Status']),
+  (13, false, 'Room Reservation Record System', 'A booking system for managing room reservations and availability.', array['ReservationId','RoomName','GuestName','CheckIn','CheckOut','Status']),
+  (14, false, 'Service Request Management System', 'Track internal or external service requests, assignees, and resolution status.', array['RequestId','RequestTitle','RequestedBy','AssignedTo','DateFiled','Status']),
+  (15, false, 'Vehicle Maintenance Record System', 'Log vehicle maintenance history, services done, and scheduled next service.', array['RecordId','VehicleName','PlateNumber','ServiceType','ServiceDate','NextSchedule'])
+on conflict (id) do update set
+  recommended = excluded.recommended,
+  name = excluded.name,
+  description = excluded.description,
+  fields = excluded.fields;
+
+-- First teacher setup after signing up:
+-- insert into public.teacher_profiles (id, email, display_name)
+-- select id, email, raw_user_meta_data->>'full_name'
+-- from auth.users
+-- where email = 'your-email@example.com'
+-- on conflict (id) do nothing;

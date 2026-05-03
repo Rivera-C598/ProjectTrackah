@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASP.NET MVC Final Project - Teacher Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#f6f5f2; --surface:#fff; --surface2:#f0eee9; --border:rgba(0,0,0,0.12); --text:#1a1917; --muted:#7a7772; --accent:#1a4ed8; --green:#15803d; --red:#b91c1c; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.6; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+  .top { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.5rem; }
+  h1, h2 { font-family: 'Syne', sans-serif; letter-spacing: -0.02em; }
+  h1 { font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.05; }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.8rem; }
+  p { color: var(--muted); max-width: 620px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .field { margin-bottom: 0.75rem; }
+  .field label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+  input, textarea, select { width: 100%; border: 1px solid var(--border); border-radius: 7px; padding: 9px 10px; font: inherit; background: #fff; }
+  textarea { min-height: 180px; resize: vertical; }
+  .btn { border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); padding: 8px 12px; font: inherit; font-weight: 700; cursor: pointer; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-danger { background: rgba(185,28,28,0.08); color: var(--red); border-color: rgba(185,28,28,0.2); }
+  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem; }
+  .num { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 5px; }
+  .row { display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.65rem 0; border-bottom: 1px solid var(--border); }
+  .row:last-child { border-bottom: none; }
+  .muted { color: var(--muted); }
+  .pill { display: inline-block; border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 700; background: var(--surface2); color: var(--muted); }
+  .pill.ok { color: var(--green); background: rgba(21,128,61,0.08); }
+  #admin-area { display: none; }
+  @media (max-width: 760px) { .grid, .summary { grid-template-columns: 1fr; } .top { display: block; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Teacher Admin</h1>
+      <p>Prototype admin for rosters, groups, project claims, section setup, and teacher email access planning.</p>
+    </div>
+    <a class="btn" href="aspnet_student_view.html">Student Page</a>
+  </div>
+
+  <div class="card" id="login-card">
+    <div class="field">
+      <label for="admin-email">Teacher email</label>
+      <input id="admin-email" type="email" placeholder="teacher@school.edu">
+    </div>
+    <div class="field">
+      <label for="admin-pass">Password</label>
+      <input id="admin-pass" type="password" placeholder="Supabase Auth password">
+    </div>
+    <button class="btn btn-primary" onclick="openAdmin()">Open Admin</button>
+  </div>
+
+  <div id="admin-area">
+    <div class="summary">
+      <div class="stat"><div class="num" id="sum-groups">0</div><div class="label">Groups</div></div>
+      <div class="stat"><div class="num" id="sum-claims">0</div><div class="label">Title Claims</div></div>
+      <div class="stat"><div class="num" id="sum-roster">0</div><div class="label">Roster</div></div>
+      <div class="stat"><div class="num" id="sum-ungrouped">0</div><div class="label">Ungrouped</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Roster</h2>
+        <div class="field">
+          <label for="section-name">Section name</label>
+          <input id="section-name" placeholder="Example: BSIT 2A">
+        </div>
+        <div class="field">
+          <label for="section-slug">Section slug</label>
+          <input id="section-slug" placeholder="Example: bsit-2a">
+        </div>
+        <div class="field">
+          <label for="section-picker">Current section</label>
+          <select id="section-picker" onchange="selectSection(this.value)"></select>
+        </div>
+        <input id="teacher-emails" type="hidden">
+        <div class="field">
+          <label for="roster-input">Student names</label>
+          <textarea id="roster-input" placeholder="Paste one full name per line"></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn" onclick="createSection()">Create Section</button>
+          <button class="btn btn-primary" onclick="saveRoster()">Save Roster</button>
+          <button class="btn" onclick="loadSampleRoster()">Load Sample 43</button>
+          <button class="btn" onclick="generateCodes()">Generate 12 Codes</button>
+          <button class="btn btn-danger" onclick="resetData()">Reset Prototype Data</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Claim Codes</h2>
+        <p style="margin-bottom:0.75rem;">Use these as the teacher-issued codes. In Supabase, each section gets its own generated code set.</p>
+        <div id="codes-list"></div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:1rem;">
+      <div class="card">
+        <h2>Groups</h2>
+        <div id="groups-list"></div>
+      </div>
+      <div class="card">
+        <h2>Ungrouped Students</h2>
+        <div id="ungrouped-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const appKey = 'aspnet_group_claims_v1';
+const claimCodes = ['ASP-ALPHA','ASP-BRAVO','ASP-CHARLIE','ASP-DELTA','ASP-ECHO','ASP-FOXTROT','ASP-GOLF','ASP-HOTEL','ASP-INDIA','ASP-JULIET','ASP-KILO','ASP-LIMA'];
+const projects = [
+  'Student Record Management System','Product Inventory Management System','Employee Record Management System','Appointment Record Management System','Customer Information Management System','Book Inventory Management System','Clinic Patient Record System','Supplier Management System','Sales Item Record System','Simple Ordering Record System','Library Borrower Record System','Equipment Borrowing System','Room Reservation Record System','Service Request Management System','Vehicle Maintenance Record System'
+];
+let app = JSON.parse(localStorage.getItem(appKey) || 'null') || { roster: [], groups: [], usedCodes: [], section: { name: '', teacherEmails: '' } };
+app.section = app.section || { name: '', teacherEmails: '' };
+
+function saveApp() { localStorage.setItem(appKey, JSON.stringify(app)); }
+function esc(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function openAdmin() {
+  if (document.getElementById('admin-pass').value !== 'teacher123') {
+    alert('Default admin password is teacher123.');
+    return;
+  }
+  document.getElementById('login-card').style.display = 'none';
+  document.getElementById('admin-area').style.display = 'block';
+  render();
+}
+function saveRoster() {
+  app.section.name = document.getElementById('section-name').value.trim();
+  app.section.teacherEmails = document.getElementById('teacher-emails').value.trim();
+  app.roster = Array.from(new Set(document.getElementById('roster-input').value.split('\n').map(n => n.trim()).filter(Boolean)));
+  saveApp();
+  render();
+}
+function loadSampleRoster() {
+  document.getElementById('roster-input').value = Array.from({ length: 43 }, (_, i) => `Student ${String(i + 1).padStart(2, '0')}`).join('\n');
+  saveRoster();
+}
+function resetData() {
+  if (!confirm('Reset all prototype data in this browser?')) return;
+  app = { roster: [], groups: [], usedCodes: [], section: { name: '', teacherEmails: '' } };
+  saveApp();
+  render();
+}
+function render() {
+  document.getElementById('section-name').value = app.section.name || '';
+  document.getElementById('teacher-emails').value = app.section.teacherEmails || '';
+  document.getElementById('roster-input').value = app.roster.join('\n');
+  const assigned = new Set(app.groups.flatMap(g => g.members.map(m => m.toLowerCase())));
+  const ungrouped = app.roster.filter(name => !assigned.has(name.toLowerCase()));
+  document.getElementById('sum-groups').textContent = app.groups.length;
+  document.getElementById('sum-claims').textContent = app.groups.filter(g => g.titleNum).length;
+  document.getElementById('sum-roster').textContent = app.roster.length;
+  document.getElementById('sum-ungrouped').textContent = ungrouped.length;
+  document.getElementById('codes-list').innerHTML = claimCodes.map(code => {
+    const group = app.groups.find(g => g.code === code);
+    return `<div class="row"><span>${code}</span><span class="pill ${group ? 'ok' : ''}">${group ? group.name : 'Unused'}</span></div>`;
+  }).join('');
+  document.getElementById('groups-list').innerHTML = app.groups.map(g => {
+    const title = g.titleNum ? projects[g.titleNum - 1] : 'No title';
+    return `<div class="row" style="display:block;">
+      <strong>${esc(g.name)}</strong> <span class="pill ${g.titleNum ? 'ok' : ''}">${esc(title)}</span>
+      <div class="muted">${g.code} · ${g.members.length}/6 members</div>
+      <div>${g.members.map(esc).join(', ') || 'No members'}</div>
+    </div>`;
+  }).join('') || '<div class="muted">No groups yet.</div>';
+  document.getElementById('ungrouped-list').innerHTML = ungrouped.map(name => `<div class="row"><span>${esc(name)}</span></div>`).join('') || '<div class="muted">No ungrouped students.</div>';
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="teacher_admin_supabase.js"></script>
+</body>
+</html>

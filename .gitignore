@@ -1,0 +1,19 @@
+# Local Supabase browser config with real project URL/anon key.
+supabase-config.js
+
+# Local environment files.
+.env
+.env.*
+
+# Vercel local metadata.
+.vercel/
+
+# Dependency/build output if this static project later gets tooling.
+node_modules/
+dist/
+build/
+
+# OS/editor noise.
+.DS_Store
+Thumbs.db
+.vscode/

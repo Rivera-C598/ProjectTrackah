@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASP.NET MVC — Final Project</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --surface: #ffffff;
+    --surface2: #f0eee9;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.15);
+    --text: #1a1917;
+    --muted: #7a7772;
+    --accent: #1a4ed8;
+    --accent2: #3b6ef5;
+    --accent-dim: rgba(26,78,216,0.08);
+    --green: #15803d;
+    --green-dim: rgba(21,128,61,0.08);
+    --green-border: rgba(21,128,61,0.2);
+    --blue: #1a4ed8;
+    --blue-dim: rgba(26,78,216,0.08);
+    --amber: #92400e;
+    --amber-dim: rgba(146,64,14,0.08);
+    --amber-border: rgba(146,64,14,0.2);
+    --red: #b91c1c;
+    --red-dim: rgba(185,28,28,0.08);
+    --red-border: rgba(185,28,28,0.15);
+    --purple: #6d28d9;
+    --purple-dim: rgba(109,40,217,0.08);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 2rem 6rem; }
+
+  .header { padding: 4rem 0 2.5rem; border-bottom: 1px solid var(--border2); margin-bottom: 2.5rem; position: relative; overflow: hidden; }
+  .header-bg { position: absolute; top: -40px; right: -60px; width: 320px; height: 320px; background: radial-gradient(circle, rgba(26,78,216,0.06) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+  .header-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-dim); border: 1px solid rgba(26,78,216,0.15);
+    padding: 4px 12px; border-radius: 20px; margin-bottom: 1.25rem;
+  }
+  .header h1 { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 0.75rem; }
+  .header h1 span { color: var(--accent); }
+  .header p { color: var(--muted); font-size: 15px; max-width: 520px; font-weight: 300; }
+  .header-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 1.5rem; }
+  .header-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 6px; }
+  .pill-blue { background: var(--blue-dim); color: var(--blue); }
+  .pill-green { background: var(--green-dim); color: var(--green); }
+  .pill-purple { background: var(--purple-dim); color: var(--purple); }
+
+  .nav-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 2.5rem; }
+  .nav-pill {
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--border2);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; text-decoration: none;
+    transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .nav-pill:hover { color: var(--text); border-color: var(--accent); }
+
+  .section { margin-bottom: 3rem; }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
+  .section-num {
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: var(--accent);
+    background: var(--accent-dim); border: 1px solid rgba(26,78,216,0.15);
+    width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .card-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+  .card-grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.75rem; }
+  .card-label { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  .card-value { font-size: 14px; font-weight: 500; color: var(--text); }
+  .card-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  .badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; margin-bottom: 6px; }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(26,78,216,0.15); }
+  .badge-green { background: var(--green-dim); color: var(--green); border: 1px solid var(--green-border); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber-border); }
+  .badge-muted { background: var(--surface2); color: var(--muted); border: 1px solid var(--border2); }
+  .badge-red { background: var(--red-dim); color: var(--red); border: 1px solid var(--red-border); }
+
+  .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .check-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .check-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); margin-top: 8px; flex-shrink: 0; }
+
+  /* roles */
+  .role-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: box-shadow 0.2s; }
+  .role-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .role-num-big { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; color: rgba(26,78,216,0.12); line-height: 1; margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  .role-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .role-sub { font-size: 12px; color: var(--muted); line-height: 1.65; }
+
+  /* project accordion */
+  .project-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.5rem; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.04); transition: box-shadow 0.2s, border-color 0.2s; }
+  .project-item:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.07); }
+  .project-item.open { border-color: rgba(26,78,216,0.3); box-shadow: 0 4px 16px rgba(26,78,216,0.08); }
+  .project-item.recommended { border-left: 3px solid var(--accent); }
+  .project-item.taken { opacity: 0.55; }
+
+  .project-trigger { width: 100%; background: none; border: none; padding: 0.9rem 1.25rem; display: flex; align-items: center; gap: 12px; cursor: pointer; text-align: left; color: var(--text); transition: background 0.15s; }
+  .project-trigger:hover { background: var(--surface2); }
+  .project-num { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600; color: var(--muted); min-width: 22px; }
+  .project-name { font-size: 14px; font-weight: 500; flex: 1; }
+  .project-chevron { color: var(--muted); font-size: 11px; transition: transform 0.25s; margin-left: auto; }
+  .project-item.open .project-chevron { transform: rotate(180deg); color: var(--accent); }
+
+  .project-body { display: none; padding: 0 1.25rem 1.25rem; border-top: 1px solid var(--border); }
+  .project-item.open .project-body { display: block; }
+  .project-body-inner { padding-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .pb-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); margin-bottom: 6px; }
+  .pb-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pb-tag { font-size: 12px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border2); padding: 3px 10px; border-radius: 4px; font-family: 'DM Sans', monospace; }
+  .pb-feat { font-size: 13px; color: var(--muted); padding: 3px 0; display: flex; gap: 8px; }
+  .pb-feat::before { content: '→'; color: var(--accent); flex-shrink: 0; }
+
+  /* availability banner inside card */
+  .avail-banner { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; margin-top: 1rem; font-size: 13px; font-weight: 500; }
+  .avail-banner.open-banner { background: var(--green-dim); color: var(--green); border: 1px solid var(--green-border); }
+  .avail-banner.taken-banner { background: var(--red-dim); color: var(--red); border: 1px solid var(--red-border); }
+  .avail-banner.partial-banner { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber-border); }
+  .avail-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  /* availability grid */
+  .avail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.5rem; }
+  .avail-item { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; font-size: 13px; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .avail-item.is-open { border-color: rgba(21,128,61,0.2); }
+  .avail-item.is-partial { border-color: rgba(146,64,14,0.2); }
+  .avail-item.is-full { border-color: rgba(185,28,28,0.12); opacity: 0.55; }
+  .avail-name { flex: 1; font-weight: 400; color: var(--text); }
+  .avail-pill { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+  .pill-open { background: var(--green-dim); color: var(--green); }
+  .pill-partial { background: var(--amber-dim); color: var(--amber); }
+  .pill-full { background: var(--red-dim); color: var(--red); }
+  .avail-groups { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* proposal checklist */
+  .prop-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .prop-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .prop-cb {
+    width: 17px; height: 17px; border-radius: 4px; border: 1.5px solid var(--border2);
+    background: none; cursor: pointer; flex-shrink: 0; appearance: none; -webkit-appearance: none;
+    transition: all 0.15s; position: relative; margin-top: 2px;
+  }
+  .prop-cb:checked { background: var(--accent); border-color: var(--accent); }
+  .prop-cb:checked::after { content: ''; position: absolute; left: 3px; top: 1px; width: 5px; height: 8px; border: 2px solid #fff; border-top: none; border-left: none; transform: rotate(45deg); }
+  .prop-text { font-size: 14px; color: var(--text); flex: 1; line-height: 1.5; }
+  .prop-text small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .prop-item.done .prop-text { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.2); }
+
+  /* cp */
+  .cp-row { display: flex; gap: 1rem; align-items: flex-start; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+  .cp-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .cp-tag { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(26,78,216,0.15); padding: 3px 8px; border-radius: 4px; white-space: nowrap; margin-top: 2px; min-width: 52px; text-align: center; }
+  .cp-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .cp-desc { font-size: 13px; color: var(--muted); }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.75rem; }
+  .tag { font-size: 12px; padding: 4px 10px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+  .tag.optional { border-style: dashed; }
+
+  .note { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; font-size: 13px; color: var(--muted); margin-top: 0.75rem; }
+
+  .progress-wrap { margin-top: 1rem; }
+  .progress-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .progress-bar { height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+  .desk-band { background: var(--surface); border: 1px solid var(--border2); border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .desk-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+  .desk-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+  .desk-copy { color: var(--muted); font-size: 13px; max-width: 560px; margin-top: 4px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end; }
+  .field label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 5px; }
+  .field input, .field textarea, .field select { width: 100%; border: 1px solid var(--border2); border-radius: 7px; background: #fff; color: var(--text); font: inherit; font-size: 14px; padding: 9px 10px; outline: none; }
+  .field textarea { min-height: 96px; resize: vertical; }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .btn { border: 1px solid var(--border2); background: var(--surface); color: var(--text); border-radius: 7px; padding: 9px 13px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); color: #fff; }
+  .btn-danger { color: var(--red); border-color: var(--red-border); background: var(--red-dim); }
+  .btn-small { padding: 5px 9px; font-size: 12px; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .status-line { margin-top: 0.8rem; font-size: 13px; color: var(--muted); }
+  .status-line strong { color: var(--text); }
+  .active-group { display: none; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; }
+  .active-group.show { display: block; }
+  .member-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+  .search-results, .member-list, .admin-list { border: 1px solid var(--border); background: var(--surface2); border-radius: 8px; padding: 0.5rem; min-height: 64px; }
+  .person-row, .admin-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .person-row:last-child, .admin-row:last-child { border-bottom: none; }
+  .person-row.is-disabled { opacity: 0.45; }
+  .muted-empty { color: var(--muted); font-size: 13px; padding: 0.55rem 0.6rem; }
+  .project-actions { margin-top: 1rem; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+  .claim-note { font-size: 12px; color: var(--muted); }
+  .admin-panel { display: none; }
+  .admin-panel.show { display: block; }
+  .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin: 1rem 0; }
+  .summary-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; }
+  .summary-num { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .summary-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 5px; }
+  #group-desk, #teacher-admin { display: none; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(26,25,23,0.42); display: none; align-items: flex-start; justify-content: center; padding: 5vh 1rem; z-index: 50; overflow-y: auto; }
+  .modal-backdrop.show { display: flex; }
+  .modal-panel { width: min(760px, 100%); background: var(--surface); border: 1px solid var(--border2); border-radius: 10px; box-shadow: 0 24px 60px rgba(0,0,0,0.18); padding: 1.25rem; }
+  .modal-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; margin-bottom: 1rem; }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  .dashboard-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 1rem 0; }
+  .dashboard-tab { display: none; }
+  .dashboard-tab.show { display: block; }
+  .template-box { background: var(--surface2); border: 1px dashed var(--border2); border-radius: 8px; padding: 1rem; font-size: 13px; color: var(--muted); }
+
+  hr { border: none; border-top: 1px solid var(--border2); margin: 2.5rem 0; }
+
+  @media (max-width: 600px) {
+    .card-grid-3, .card-grid-4 { grid-template-columns: 1fr; }
+    .project-body-inner { grid-template-columns: 1fr; }
+    .avail-grid { grid-template-columns: 1fr; }
+    .desk-top, .member-tools, .admin-grid, .form-grid, .summary-grid { grid-template-columns: 1fr; display: grid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="header">
+    <div class="header-bg"></div>
+    <div class="header-tag">Student View — Final Project</div>
+    <h1>ASP.NET MVC<br><span>Final Project</span></h1>
+    <p>Requirements, project options, checkpoints, and your proposal checklist — everything in one place.</p>
+    <div class="header-pills">
+      <span class="header-pill pill-blue">ASP.NET MVC</span>
+      <span class="header-pill pill-green">SQL Server</span>
+      <span class="header-pill pill-purple">SQLite (optional)</span>
+      <span class="header-pill pill-blue">Bootstrap UI</span>
+    </div>
+  </header>
+
+  <nav class="nav-pills">
+    <a class="nav-pill" href="#requirements">Requirements</a>
+    <a class="nav-pill" href="#roles">Your Role</a>
+    <a class="nav-pill" href="#projects">Choose a Title</a>
+    <a class="nav-pill" href="#availability">Availability</a>
+    <a class="nav-pill" href="#checkpoints">Checkpoints</a>
+    <a class="nav-pill" href="#proposal-checklist">Proposal Checklist</a>
+    <button class="nav-pill" type="button" onclick="openDashboardDialog()">Group Dashboard</button>
+  </nav>
+
+  <section class="desk-band" id="group-desk" aria-hidden="true">
+    <div class="desk-top">
+      <div>
+        <div class="desk-title">Group Desk</div>
+        <div class="desk-copy">Group leaders use a one-time claim code to open a group workspace. Adding members is lightweight; a password is only required once the group claims a title.</div>
+      </div>
+      <span class="badge badge-green" id="group-limit-badge">8 groups · 5-6 members</span>
+    </div>
+
+    <div class="form-grid" id="claim-form">
+      <div class="field">
+        <label for="claim-code">Claim code</label>
+        <input id="claim-code" placeholder="Example: ASP-ALPHA">
+      </div>
+      <div class="field">
+        <label for="leader-name">Leader name</label>
+        <input id="leader-name" placeholder="Full name of group leader">
+      </div>
+      <button class="btn btn-primary" onclick="claimGroupCode()">Open Group</button>
+    </div>
+    <div class="status-line" id="claim-status">No active group yet.</div>
+
+    <div class="active-group" id="legacy-active-group">
+      <div class="desk-top">
+        <div>
+          <div class="desk-title" id="active-group-name">Group</div>
+          <div class="desk-copy" id="active-group-meta"></div>
+        </div>
+        <button class="btn" onclick="leaveGroupDesk()">Leave Desk</button>
+      </div>
+
+      <div class="member-tools">
+        <div>
+          <div class="field">
+            <label for="legacy-member-search">Search roster</label>
+            <input id="legacy-member-search" placeholder="Type a student name">
+          </div>
+          <div class="search-results" id="legacy-member-results" style="margin-top:0.5rem;"></div>
+        </div>
+        <div>
+          <div class="card-label">Current members</div>
+          <div class="member-list" id="legacy-current-members"></div>
+        </div>
+      </div>
+
+      <div class="status-line" id="title-session-note"></div>
+    </div>
+  </section>
+
+  <!-- REQUIREMENTS -->
+  <section class="section" id="requirements">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-title">What Your Project Must Have</div>
+    </div>
+
+    <div class="card-grid-3" style="margin-bottom:0.75rem;">
+      <div class="card">
+        <div class="badge badge-blue">Framework</div>
+        <div class="card-value">ASP.NET MVC</div>
+        <div class="card-sub">C# with Razor views</div>
+      </div>
+      <div class="card">
+        <div class="badge badge-green">Database</div>
+        <div class="card-value">SQL Server</div>
+        <div class="card-sub">SQLite accepted as alternative</div>
+      </div>
+      <div class="card">
+        <div class="badge badge-amber">Minimum</div>
+        <div class="card-value">1 main table</div>
+        <div class="card-sub">Stronger groups: 2 tables</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.75rem;">Full CRUD — all four are required</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1.5rem;">
+        <div>
+          <div class="check-item"><div class="check-dot"></div>Home page</div>
+          <div class="check-item"><div class="check-dot"></div>Navigation bar</div>
+          <div class="check-item"><div class="check-dot"></div>Create — add new records</div>
+          <div class="check-item"><div class="check-dot"></div>Read — display record list</div>
+          <div class="check-item"><div class="check-dot"></div>Update — edit records</div>
+        </div>
+        <div>
+          <div class="check-item"><div class="check-dot"></div>Delete — remove records</div>
+          <div class="check-item"><div class="check-dot"></div>At least one database table</div>
+          <div class="check-item"><div class="check-dot"></div>Validation on important fields</div>
+          <div class="check-item"><div class="check-dot"></div>Bootstrap layout</div>
+          <div class="check-item"><div class="check-dot"></div>Final presentation and demo</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.5rem;">What to submit</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <span class="badge badge-blue">Source code</span>
+        <span class="badge badge-blue">Database script / backup</span>
+        <span class="badge badge-blue">Screenshots</span>
+        <span class="badge badge-blue">Short documentation</span>
+        <span class="badge badge-blue">Contribution list</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.5rem;">Optional extras for stronger groups</div>
+      <div class="tag-row" style="margin-top:0;">
+        <span class="tag optional">Search / filter</span>
+        <span class="tag optional">Second table</span>
+        <span class="tag optional">Dashboard cards</span>
+        <span class="tag optional">Total counts</span>
+        <span class="tag optional">Simple reports</span>
+        <span class="tag optional">Sorting</span>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- ROLES -->
+  <section class="section" id="roles">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-title">Group Roles</div>
+    </div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:1.25rem;">Recommended group size is 5-6. Every member has a clear role. If your group is 5, combine Testing/Docs with UI or Database.</p>
+    <div class="card-grid-4">
+      <div class="role-card">
+        <div class="role-num-big">01</div>
+        <div class="role-title">Database and Model</div>
+        <div class="role-sub">Table design · model properties · validation attributes</div>
+      </div>
+      <div class="role-card">
+        <div class="role-num-big">02</div>
+        <div class="role-title">Controller and CRUD Logic</div>
+        <div class="role-sub">Create · Read · Update · Delete actions · route params</div>
+      </div>
+      <div class="role-card">
+        <div class="role-num-big">03</div>
+        <div class="role-title">Views and Bootstrap UI</div>
+        <div class="role-sub">Create · Index · Edit · Delete views · navbar · layout</div>
+      </div>
+      <div class="role-card">
+        <div class="role-num-big">04</div>
+        <div class="role-title">Testing and Docs</div>
+        <div class="role-sub">Feature testing · screenshots · documentation · presentation flow</div>
+      </div>
+    </div>
+    <div class="note">During the final presentation, <strong style="color:var(--text)">each member must explain their own contribution.</strong> Know your part — don't let one person carry the whole demo.</div>
+  </section>
+
+  <hr>
+
+  <!-- PROJECTS -->
+  <section class="section" id="projects">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div class="section-title">Choose a Project Title</div>
+    </div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:1.25rem;">Click to expand. <span style="color:var(--accent);font-weight:600;">★ recommended</span> titles are the best fit for beginners — clear scope, straightforward CRUD.</p>
+    <div id="project-list"></div>
+  </section>
+
+  <hr>
+
+  <!-- AVAILABILITY -->
+  <section class="section" id="availability">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div class="section-title">Title Availability</div>
+    </div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:1.25rem;">Each title can be claimed by one group only. In the online version this should sync through Supabase; this prototype saves in this browser.</p>
+    <div class="card" style="display:flex; gap:1.5rem; flex-wrap:wrap; padding:0.9rem 1.5rem; margin-bottom:1rem;">
+      <span style="display:flex;align-items:center;gap:6px;font-size:13px;"><span style="width:8px;height:8px;border-radius:50%;background:#15803d;display:inline-block;"></span>Open</span>
+      <span style="display:flex;align-items:center;gap:6px;font-size:13px;"><span style="width:8px;height:8px;border-radius:50%;background:#b91c1c;display:inline-block;"></span>Claimed</span>
+    </div>
+    <div class="avail-grid" id="avail-grid"></div>
+  </section>
+
+  <hr>
+
+  <section class="section" id="teacher-admin" aria-hidden="true">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div class="section-title">Teacher Admin</div>
+    </div>
+    <div class="desk-band">
+      <div class="form-grid" id="admin-login">
+        <div class="field">
+          <label for="admin-pass">Admin password</label>
+          <input id="admin-pass" type="password" placeholder="Default: teacher123">
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" onclick="openAdmin()">Open Admin</button>
+        </div>
+        <button class="btn" onclick="resetDemoData()">Reset Demo Data</button>
+      </div>
+
+      <div class="admin-panel" id="admin-panel">
+        <div class="desk-top">
+          <div>
+            <div class="desk-title">Class Control</div>
+            <div class="desk-copy">Manage roster names, review groups, check title claims, and see who still has no group.</div>
+          </div>
+          <button class="btn" onclick="closeAdmin()">Close Admin</button>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-box"><div class="summary-num" id="sum-groups">0</div><div class="summary-label">Groups opened</div></div>
+          <div class="summary-box"><div class="summary-num" id="sum-claimed">0</div><div class="summary-label">Titles claimed</div></div>
+          <div class="summary-box"><div class="summary-num" id="sum-ungrouped">0</div><div class="summary-label">Ungrouped</div></div>
+          <div class="summary-box"><div class="summary-num" id="sum-codes">12</div><div class="summary-label">Unused codes</div></div>
+        </div>
+
+        <div class="admin-grid">
+          <div>
+            <div class="field">
+              <label for="roster-input">Roster names</label>
+              <textarea id="roster-input" placeholder="Paste one full name per line"></textarea>
+            </div>
+            <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="saveRoster()">Save Roster</button>
+              <button class="btn" onclick="loadSampleRoster()">Load Sample 43</button>
+            </div>
+            <div class="card-label" style="margin-top:1rem;">Students without groups</div>
+            <div class="admin-list" id="ungrouped-list"></div>
+          </div>
+          <div>
+            <div class="card-label">Groups and title claims</div>
+            <div class="admin-list" id="admin-groups"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- CHECKPOINTS -->
+  <section class="section" id="checkpoints">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div class="section-title">Project Checkpoints</div>
+    </div>
+    <div class="card">
+      <div class="cp-row">
+        <div class="cp-tag">CP 1</div>
+        <div><div class="cp-title">Project Proposal</div><div class="cp-desc">Submit group members, chosen title, purpose, planned fields, planned pages, and member roles</div></div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-tag">CP 2</div>
+        <div><div class="cp-title">Database and Model</div><div class="cp-desc">Working database/table, model class, validation attributes in place</div></div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-tag">CP 3</div>
+        <div><div class="cp-title">Create and Read</div><div class="cp-desc">Working create form and records displaying on your index/list page</div></div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-tag">CP 4</div>
+        <div><div class="cp-title">Update and Delete</div><div class="cp-desc">Edit form working, delete action working</div></div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-tag">Final</div>
+        <div><div class="cp-title">Presentation and Demo</div><div class="cp-desc">Full CRUD demo, validation shown, live database, each member explains their part</div></div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- PROPOSAL CHECKLIST -->
+  <section class="section" id="proposal-checklist">
+    <div class="section-header">
+      <div class="section-num">07</div>
+      <div class="section-title">Proposal Checklist</div>
+    </div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:1.25rem;">Check each item off before submitting your proposal. Your progress saves in this browser.</p>
+    <div class="card" id="proposal-card">
+
+      <div class="prop-item" id="pi-0">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(0,this)">
+        <div class="prop-text">Project title chosen and confirmed available
+          <small>Check the availability section — first approved, first reserved</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-1">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(1,this)">
+        <div class="prop-text">All group members listed with full names
+          <small>5-6 is recommended, up to 6 allowed</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-2">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(2,this)">
+        <div class="prop-text">Purpose of the application written out
+          <small>Who uses it and what problem does it solve</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-3">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(3,this)">
+        <div class="prop-text">Target users identified
+          <small>e.g. school admin, store owner, clinic staff</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-4">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(4,this)">
+        <div class="prop-text">Database table name and planned fields listed
+          <small>e.g. Products — Id, ProductName, Category, Quantity, Price</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-5">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(5,this)">
+        <div class="prop-text">CRUD features described for each action
+          <small>What Create, Read, Update, and Delete will do in your system</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-6">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(6,this)">
+        <div class="prop-text">Validation rules listed
+          <small>e.g. product name required, quantity must not be negative</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-7">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(7,this)">
+        <div class="prop-text">Member roles assigned
+          <small>Database/Model · Controller/Logic · Views/UI · Testing/Docs</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-8">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(8,this)">
+        <div class="prop-text">Proposal submitted and approved by instructor
+          <small>You cannot start building until your proposal is approved</small>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Proposal progress</span>
+          <span id="progress-count">0 / 9</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="note">
+      <strong style="color:var(--text)">Reminder:</strong> Only approved proposals can proceed to development. 1 title = 1 group. All groups follow the same technical requirements.
+    </div>
+  </section>
+
+</div>
+
+<div class="modal-backdrop" id="claim-modal">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">Confirm Project Claim</div>
+        <div class="desk-copy" id="claim-project-summary">Review the title, enter your code, then confirm.</div>
+      </div>
+      <button class="btn" onclick="closeClaimDialog()">Close</button>
+    </div>
+    <div class="card" id="claim-project-details"></div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="claim-code-modal">Claim code</label>
+        <input id="claim-code-modal" placeholder="Example: ASP-ALPHA">
+      </div>
+      <input id="leader-name-modal" type="hidden" value="Group Leader">
+      <button class="btn btn-primary" onclick="confirmProjectClaim()">Confirm Claim</button>
+    </div>
+    <div class="status-line" id="claim-modal-status"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="dashboard-modal">
+  <div class="modal-panel">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="dashboard-title">Group Dashboard</div>
+        <div class="desk-copy" id="dashboard-meta">Enter your claimed group code and password to continue.</div>
+      </div>
+      <button class="btn" onclick="closeDashboardDialog()">Close</button>
+    </div>
+
+    <div class="form-grid" id="dashboard-login">
+      <div class="field">
+        <label for="dashboard-code">Group code</label>
+        <input id="dashboard-code" placeholder="Example: ASP-ALPHA">
+      </div>
+      <div class="field">
+        <label for="dashboard-pass">Password</label>
+        <input id="dashboard-pass" type="password" placeholder="Group password">
+      </div>
+      <button class="btn btn-primary" onclick="loginDashboard()">Open Dashboard</button>
+    </div>
+
+    <div class="active-group" id="dashboard-content">
+      <div class="summary-grid">
+        <div class="summary-box"><div class="summary-num" id="dash-member-count">0</div><div class="summary-label">Members</div></div>
+        <div class="summary-box"><div class="summary-num" id="dash-check-count">0</div><div class="summary-label">Checklist</div></div>
+        <div class="summary-box"><div class="summary-num" id="dash-title-num">0</div><div class="summary-label">Title No.</div></div>
+        <div class="summary-box"><div class="summary-num">CP</div><div class="summary-label">Tracker</div></div>
+      </div>
+
+      <div class="dashboard-tabs">
+        <button class="btn btn-small" onclick="showDashTab('members')">Members</button>
+        <button class="btn btn-small" onclick="showDashTab('tracker')">Checkpoints</button>
+        <button class="btn btn-small" onclick="showDashTab('template')">Proposal Template</button>
+      </div>
+
+      <div class="dashboard-tab show" id="dash-members">
+        <div class="member-tools">
+          <div>
+            <div class="field">
+              <label for="member-search">Search roster</label>
+              <input id="member-search" placeholder="Type a student name" oninput="renderMemberSearch()">
+            </div>
+            <div class="search-results" id="member-results" style="margin-top:0.5rem;"></div>
+          </div>
+          <div>
+            <div class="card-label">Current members</div>
+            <div class="member-list" id="current-members"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-tab" id="dash-tracker">
+        <div class="card" id="group-checklist"></div>
+      </div>
+
+      <div class="dashboard-tab" id="dash-template">
+        <div class="template-box">
+          Download a starter proposal file with the title, purpose, target users, planned fields, CRUD scope, validation rules, member roles, and checkpoint notes.
+        </div>
+        <button class="btn btn-primary" style="margin-top:0.75rem;" onclick="downloadProposalTemplate()">Download Proposal Template</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const projects = [
+  { num:1, recommended:true, name:"Student Record Management System", desc:"A system for managing student information including personal details, enrollment status, and academic records.", fields:["StudentId","FirstName","LastName","Course","Year","Status"] },
+  { num:2, recommended:true, name:"Product Inventory Management System", desc:"An admin panel for tracking product stock, pricing, and category information.", fields:["ProductId","ProductName","Category","Quantity","Price","Status"] },
+  { num:3, recommended:true, name:"Employee Record Management System", desc:"A system for managing employee profiles, departments, and employment status.", fields:["EmployeeId","FullName","Department","Position","DateHired","Status"] },
+  { num:4, recommended:true, name:"Appointment Record Management System", desc:"A booking and scheduling system for managing appointments with clients or patients.", fields:["AppointmentId","ClientName","Service","Date","Time","Status"] },
+  { num:5, recommended:false, name:"Customer Information Management System", desc:"A CRM-lite system for tracking customer details and contact information.", fields:["CustomerId","Name","Email","Phone","Address","DateAdded"] },
+  { num:6, recommended:false, name:"Book Inventory Management System", desc:"A library or bookstore tool for managing book titles, authors, stock, and categories.", fields:["BookId","Title","Author","Genre","Quantity","Price"] },
+  { num:7, recommended:false, name:"Clinic Patient Record System", desc:"A patient records system for a small clinic tracking consultations and diagnoses.", fields:["PatientId","Name","Age","Gender","Diagnosis","VisitDate"] },
+  { num:8, recommended:false, name:"Supplier Management System", desc:"Track supplier details, product categories they supply, and contact information.", fields:["SupplierId","SupplierName","ContactPerson","Email","Phone","Category"] },
+  { num:9, recommended:false, name:"Sales Item Record System", desc:"A simple sales tracking tool for logging items sold, quantities, and totals.", fields:["SaleId","ItemName","Category","Quantity","UnitPrice","SaleDate"] },
+  { num:10, recommended:false, name:"Simple Ordering Record System", desc:"Track customer orders, ordered items, and order status for a small business.", fields:["OrderId","CustomerName","Item","Quantity","TotalAmount","Status"] },
+  { num:11, recommended:false, name:"Library Borrower Record System", desc:"Manage book borrow and return transactions for a school or community library.", fields:["BorrowId","BorrowerName","BookTitle","BorrowDate","ReturnDate","Status"] },
+  { num:12, recommended:false, name:"Equipment Borrowing System", desc:"Track borrowed equipment, borrower details, and return schedules.", fields:["BorrowId","EquipmentName","BorrowerName","BorrowDate","DueDate","Status"] },
+  { num:13, recommended:false, name:"Room Reservation Record System", desc:"A booking system for managing room reservations and availability.", fields:["ReservationId","RoomName","GuestName","CheckIn","CheckOut","Status"] },
+  { num:14, recommended:false, name:"Service Request Management System", desc:"Track internal or external service requests, assignees, and resolution status.", fields:["RequestId","RequestTitle","RequestedBy","AssignedTo","DateFiled","Status"] },
+  { num:15, recommended:false, name:"Vehicle Maintenance Record System", desc:"Log vehicle maintenance history, services done, and scheduled next service.", fields:["RecordId","VehicleName","PlateNumber","ServiceType","ServiceDate","NextSchedule"] }
+];
+
+const tracker = JSON.parse(localStorage.getItem('aspnet_tracker') || '{}');
+
+function getAvail(num) {
+  const d = tracker['p'+num] || {};
+  return { count:(d.g1?1:0)+(d.g2?1:0), g1:d.g1||'', g2:d.g2||'' };
+}
+
+function buildProjects() {
+  const list = document.getElementById('project-list');
+  projects.forEach(p => {
+    const av = getAvail(p.num);
+    const isFull = av.count >= 2;
+    const item = document.createElement('div');
+    item.className = 'project-item'+(p.recommended?' recommended':'')+(isFull?' taken':'');
+    let banner = '';
+    if(av.count===0) banner=`<div class="avail-banner open-banner"><div class="avail-dot"></div>Available — both slots open</div>`;
+    else if(av.count===1) banner=`<div class="avail-banner partial-banner"><div class="avail-dot"></div>1 slot remaining</div>`;
+    else banner=`<div class="avail-banner taken-banner"><div class="avail-dot"></div>Full — both slots taken</div>`;
+
+    item.innerHTML = `
+      <button class="project-trigger" onclick="toggleProject(this)">
+        <span class="project-num">${String(p.num).padStart(2,'0')}</span>
+        <span class="project-name">${p.recommended?'★ ':''}${p.name}</span>
+        <span class="badge ${isFull?'badge-red':p.recommended?'badge-blue':'badge-muted'}" style="margin:0;flex-shrink:0;">${isFull?'Full':p.recommended?'Recommended':'Available'}</span>
+        <span class="project-chevron">▼</span>
+      </button>
+      <div class="project-body">
+        <div class="project-body-inner">
+          <div>
+            <div class="pb-label">Description</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:1rem;">${p.desc}</div>
+            <div class="pb-label">Suggested Fields</div>
+            <div class="pb-tags">${p.fields.map(f=>`<span class="pb-tag">${f}</span>`).join('')}</div>
+          </div>
+          <div>
+            <div class="pb-label">Required CRUD Features</div>
+            <div class="pb-feat">Create — add new records</div>
+            <div class="pb-feat">Read — display record list</div>
+            <div class="pb-feat">Update — edit existing records</div>
+            <div class="pb-feat">Delete — remove records</div>
+            <div class="pb-feat">Validation on required fields</div>
+            <div class="pb-feat">Bootstrap-based interface</div>
+            ${banner}
+          </div>
+        </div>
+      </div>`;
+    list.appendChild(item);
+  });
+}
+
+function toggleProject(btn) { btn.closest('.project-item').classList.toggle('open'); }
+
+function buildAvail() {
+  const grid = document.getElementById('avail-grid');
+  projects.forEach(p => {
+    const av = getAvail(p.num);
+    const cls = av.count===0?'is-open':av.count===1?'is-partial':'is-full';
+    const pill = av.count===0?'pill-open':av.count===1?'pill-partial':'pill-full';
+    const pillTxt = av.count===0?'Open':av.count===1?'1 left':'Full';
+    const groupTxt = av.count===0?'No groups yet':av.count===1?`${av.g1||av.g2} + 1 open`:`${av.g1} · ${av.g2}`;
+    const el = document.createElement('div');
+    el.className = `avail-item ${cls}`;
+    el.innerHTML = `<span class="avail-name">${p.recommended?'★ ':''}${p.name}</span><span class="avail-groups">${groupTxt}</span><span class="avail-pill ${pill}">${pillTxt}</span>`;
+    grid.appendChild(el);
+  });
+}
+
+const claimCodes = ['ASP-ALPHA','ASP-BRAVO','ASP-CHARLIE','ASP-DELTA','ASP-ECHO','ASP-FOXTROT','ASP-GOLF','ASP-HOTEL','ASP-INDIA','ASP-JULIET','ASP-KILO','ASP-LIMA'];
+const appKey = 'aspnet_group_claims_v1';
+const activeGroupKey = 'aspnet_active_group_id';
+let app = JSON.parse(localStorage.getItem(appKey) || 'null') || { roster: [], groups: [], usedCodes: [] };
+let activeGroupId = localStorage.getItem(activeGroupKey) || '';
+let pendingProjectNum = null;
+
+function saveApp() { localStorage.setItem(appKey, JSON.stringify(app)); }
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function getActiveGroup() { return app.groups.find(g => g.id === activeGroupId) || null; }
+function getProject(num) { return projects.find(p => p.num === Number(num)); }
+function getClaim(num) { return app.groups.find(g => g.titleNum === Number(num)); }
+function memberGroup(name) { return app.groups.find(g => g.members.some(m => m.toLowerCase() === name.toLowerCase())); }
+
+function claimGroupCode() {
+  const code = document.getElementById('claim-code').value.trim().toUpperCase();
+  const leader = document.getElementById('leader-name').value.trim();
+  const status = document.getElementById('claim-status');
+  if (!claimCodes.includes(code)) {
+    status.textContent = 'That claim code is not recognized.';
+    return;
+  }
+  if (!leader) {
+    status.textContent = 'Enter the group leader name first.';
+    return;
+  }
+  const existing = app.groups.find(g => g.code === code);
+  if (existing) {
+    if (existing.password) {
+      const entered = prompt('This group has already claimed a title. Enter the group password to continue.');
+      if (entered !== existing.password) {
+        status.textContent = 'Password did not match.';
+        return;
+      }
+    }
+    activeGroupId = existing.id;
+  } else {
+    if (app.groups.length >= 8) {
+      status.textContent = 'The intended 8 class groups are already opened. Use Teacher Admin to adjust.';
+      return;
+    }
+    const group = {
+      id: 'g' + Date.now(),
+      code,
+      name: 'Group ' + String.fromCharCode(65 + app.groups.length),
+      leader,
+      members: [leader],
+      titleNum: null,
+      password: ''
+    };
+    app.groups.push(group);
+    app.usedCodes.push(code);
+    activeGroupId = group.id;
+    saveApp();
+  }
+  localStorage.setItem(activeGroupKey, activeGroupId);
+  document.getElementById('claim-code').value = '';
+  document.getElementById('leader-name').value = '';
+  renderAll();
+}
+
+function leaveGroupDesk() {
+  activeGroupId = '';
+  localStorage.removeItem(activeGroupKey);
+  renderAll();
+}
+
+function renderGroupDesk() {
+  if (!document.getElementById('active-group')) return;
+  const group = getActiveGroup();
+  const active = document.getElementById('active-group');
+  const status = document.getElementById('claim-status');
+  if (!group) {
+    active.classList.remove('show');
+    status.textContent = 'No active group yet.';
+    return;
+  }
+  active.classList.add('show');
+  const title = group.titleNum ? getProject(group.titleNum).name : 'No title claimed yet';
+  status.innerHTML = `Active: <strong>${escapeHtml(group.name)}</strong>`;
+  document.getElementById('active-group-name').textContent = `${group.name} Desk`;
+  document.getElementById('active-group-meta').textContent = `${group.members.length}/6 members - ${title}`;
+  document.getElementById('title-session-note').textContent = group.password
+    ? 'This group has a title claim. Future access requires the group password.'
+    : 'Password is not required yet. It appears only when this group claims a title.';
+  renderCurrentMembers();
+  renderMemberSearch();
+}
+
+function renderCurrentMembers() {
+  const group = getActiveGroup();
+  const box = document.getElementById('current-members');
+  if (!group || !group.members.length) {
+    box.innerHTML = '<div class="muted-empty">No members yet.</div>';
+    return;
+  }
+  box.innerHTML = group.members.map(name => `
+    <div class="person-row">
+      <span>${escapeHtml(name)}</span>
+      <button class="btn btn-small" onclick="removeMember(decodeURIComponent('${encodeURIComponent(name)}'))">Remove</button>
+    </div>
+  `).join('');
+}
+
+function renderMemberSearch() {
+  const group = getActiveGroup();
+  const box = document.getElementById('member-results');
+  if (!group) return;
+  if (!app.roster.length) {
+    box.innerHTML = '<div class="muted-empty">Teacher Admin needs roster names before leaders can search.</div>';
+    return;
+  }
+  const q = document.getElementById('member-search').value.trim().toLowerCase();
+  const matches = app.roster.filter(name => !q || name.toLowerCase().includes(q)).slice(0, 8);
+  box.innerHTML = matches.map(name => {
+    const assigned = memberGroup(name);
+    const inThisGroup = group.members.some(m => m.toLowerCase() === name.toLowerCase());
+    const disabled = assigned && !inThisGroup;
+    const label = disabled ? `Already in ${assigned.name}` : inThisGroup ? 'Added' : 'Add';
+    return `
+      <div class="person-row ${disabled ? 'is-disabled' : ''}">
+        <span>${escapeHtml(name)}</span>
+        <button class="btn btn-small" ${disabled || inThisGroup || group.members.length >= 6 ? 'disabled' : ''} onclick="addMember(decodeURIComponent('${encodeURIComponent(name)}'))">${label}</button>
+      </div>
+    `;
+  }).join('') || '<div class="muted-empty">No matching students.</div>';
+}
+
+function addMember(name) {
+  const group = getActiveGroup();
+  if (!group || group.members.length >= 6 || memberGroup(name)) return;
+  group.members.push(name);
+  saveApp();
+  renderAll();
+}
+
+function openClaimDialog(num) {
+  const project = getProject(num);
+  const claim = getClaim(num);
+  if (claim) {
+    alert('That title has already been claimed.');
+    return;
+  }
+  pendingProjectNum = num;
+  document.getElementById('claim-project-summary').textContent = 'Review the title and enter the group claim code given by your teacher.';
+  document.getElementById('claim-project-details').innerHTML = `
+    <div class="badge ${project.recommended ? 'badge-blue' : 'badge-muted'}">${project.recommended ? 'Recommended' : 'Open title'}</div>
+    <div class="card-value">${escapeHtml(project.name)}</div>
+    <div class="card-sub">${escapeHtml(project.desc)}</div>
+    <div class="pb-tags" style="margin-top:0.75rem;">${project.fields.map(f => `<span class="pb-tag">${f}</span>`).join('')}</div>
+  `;
+  document.getElementById('claim-modal-status').textContent = '';
+  document.getElementById('claim-modal').classList.add('show');
+}
+
+function closeClaimDialog() {
+  pendingProjectNum = null;
+  document.getElementById('claim-modal').classList.remove('show');
+}
+
+function confirmProjectClaim() {
+  const project = getProject(pendingProjectNum);
+  const code = document.getElementById('claim-code-modal').value.trim().toUpperCase();
+  const status = document.getElementById('claim-modal-status');
+  if (!project) return;
+  if (!claimCodes.includes(code)) {
+    status.textContent = 'That claim code is not recognized.';
+    return;
+  }
+  if (getClaim(project.num)) {
+    status.textContent = 'That title was already claimed.';
+    renderAll();
+    return;
+  }
+  let group = app.groups.find(g => g.code === code);
+  if (group && group.titleNum) {
+    status.textContent = 'This code already has a claimed title.';
+    return;
+  }
+  if (!group) {
+    if (app.groups.length >= 8) {
+      status.textContent = 'The intended 8 class groups are already opened.';
+      return;
+    }
+    group = {
+      id: 'g' + Date.now(),
+      code,
+      name: 'Group ' + String.fromCharCode(65 + app.groups.length),
+      members: [],
+      titleNum: null,
+      password: '',
+      checklist: []
+    };
+    app.groups.push(group);
+    app.usedCodes.push(code);
+  }
+  const password = prompt(`Set a password for ${group.name}. This will be used for the dashboard.`, code.replace('ASP-', 'group-').toLowerCase());
+  if (!password) return;
+  group.titleNum = project.num;
+  group.password = password;
+  activeGroupId = group.id;
+  localStorage.setItem(activeGroupKey, activeGroupId);
+  saveApp();
+  closeClaimDialog();
+  renderAll();
+  openDashboardDialog(true);
+}
+
+function removeMember(name) {
+  const group = getActiveGroup();
+  if (!group) return;
+  group.members = group.members.filter(m => m !== name);
+  saveApp();
+  renderAll();
+}
+
+function openDashboardDialog(skipLogin) {
+  document.getElementById('dashboard-modal').classList.add('show');
+  const group = getActiveGroup();
+  if (skipLogin && group) {
+    document.getElementById('dashboard-login').style.display = 'none';
+    document.getElementById('dashboard-content').classList.add('show');
+    renderDashboard();
+  } else {
+    document.getElementById('dashboard-login').style.display = 'grid';
+    document.getElementById('dashboard-content').classList.remove('show');
+  }
+}
+
+function closeDashboardDialog() {
+  document.getElementById('dashboard-modal').classList.remove('show');
+}
+
+function loginDashboard() {
+  const code = document.getElementById('dashboard-code').value.trim().toUpperCase();
+  const password = document.getElementById('dashboard-pass').value;
+  const group = app.groups.find(g => g.code === code);
+  if (!group || !group.password || group.password !== password) {
+    alert('Code or password did not match a claimed group.');
+    return;
+  }
+  activeGroupId = group.id;
+  localStorage.setItem(activeGroupKey, activeGroupId);
+  document.getElementById('dashboard-login').style.display = 'none';
+  document.getElementById('dashboard-content').classList.add('show');
+  renderDashboard();
+}
+
+function showDashTab(tab) {
+  ['members','tracker','template'].forEach(name => {
+    document.getElementById('dash-' + name).classList.toggle('show', name === tab);
+  });
+}
+
+function renderDashboard() {
+  const group = getActiveGroup();
+  if (!group || !group.titleNum) return;
+  const project = getProject(group.titleNum);
+  document.getElementById('dashboard-title').textContent = group.name + ' Dashboard';
+  document.getElementById('dashboard-meta').textContent = `${project.name} · ${group.members.length}/6 members`;
+  document.getElementById('dash-member-count').textContent = group.members.length;
+  document.getElementById('dash-title-num').textContent = String(group.titleNum).padStart(2, '0');
+  renderCurrentMembers();
+  renderMemberSearch();
+  renderGroupChecklist();
+}
+
+function renderGroupChecklist() {
+  const group = getActiveGroup();
+  const box = document.getElementById('group-checklist');
+  const items = [
+    'Members are complete',
+    'Proposal template downloaded',
+    'Purpose and target users written',
+    'Database fields planned',
+    'CRUD pages assigned',
+    'Validation rules listed',
+    'CP 1 proposal ready',
+    'CP 2 database/model ready',
+    'CP 3 create/read ready',
+    'CP 4 update/delete ready'
+  ];
+  group.checklist = group.checklist || [];
+  const done = group.checklist.filter(Boolean).length;
+  document.getElementById('dash-check-count').textContent = `${done}/${items.length}`;
+  box.innerHTML = items.map((item, i) => `
+    <div class="prop-item ${group.checklist[i] ? 'done' : ''}">
+      <input type="checkbox" class="prop-cb" ${group.checklist[i] ? 'checked' : ''} onchange="toggleGroupCheck(${i}, this.checked)">
+      <div class="prop-text">${item}</div>
+    </div>
+  `).join('');
+}
+
+function toggleGroupCheck(index, checked) {
+  const group = getActiveGroup();
+  group.checklist = group.checklist || [];
+  group.checklist[index] = checked;
+  saveApp();
+  renderGroupChecklist();
+}
+
+function downloadProposalTemplate() {
+  const group = getActiveGroup();
+  if (!group || !group.titleNum) return;
+  const project = getProject(group.titleNum);
+  const content = [
+    'ASP.NET MVC Final Project Proposal',
+    '',
+    `Group: ${group.name}`,
+    `Project Title: ${project.name}`,
+    `Members: ${group.members.join(', ')}`,
+    '',
+    '1. Purpose of the Application:',
+    '',
+    '2. Target Users:',
+    '',
+    '3. Planned Database Table and Fields:',
+    project.fields.map(f => `- ${f}`).join('\n'),
+    '',
+    '4. CRUD Features:',
+    '- Create:',
+    '- Read:',
+    '- Update:',
+    '- Delete:',
+    '',
+    '5. Validation Rules:',
+    '',
+    '6. Member Roles:',
+    '',
+    '7. Checkpoint Notes:'
+  ].join('\n');
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${group.name.replace(/\s+/g, '_')}_proposal_template.txt`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function buildProjects() {
+  const list = document.getElementById('project-list');
+  list.innerHTML = '';
+  projects.forEach(p => {
+    const claim = getClaim(p.num);
+    const isTaken = Boolean(claim);
+    const item = document.createElement('div');
+    item.className = 'project-item'+(p.recommended?' recommended':'')+(isTaken?' taken':'');
+    const banner = isTaken
+      ? `<div class="avail-banner taken-banner"><div class="avail-dot"></div>Claimed by ${escapeHtml(claim.name)}</div>`
+      : `<div class="avail-banner open-banner"><div class="avail-dot"></div>Available to claim</div>`;
+    item.innerHTML = `
+      <button class="project-trigger" onclick="toggleProject(this)">
+        <span class="project-num">${String(p.num).padStart(2,'0')}</span>
+        <span class="project-name">${p.recommended?'* ':''}${p.name}</span>
+        <span class="badge ${isTaken?'badge-red':p.recommended?'badge-blue':'badge-muted'}" style="margin:0;flex-shrink:0;">${isTaken?'Claimed':p.recommended?'Recommended':'Open'}</span>
+        <span class="project-chevron">v</span>
+      </button>
+      <div class="project-body">
+        <div class="project-body-inner">
+          <div>
+            <div class="pb-label">Description</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:1rem;">${p.desc}</div>
+            <div class="pb-label">Suggested Fields</div>
+            <div class="pb-tags">${p.fields.map(f=>`<span class="pb-tag">${f}</span>`).join('')}</div>
+          </div>
+          <div>
+            <div class="pb-label">Required CRUD Features</div>
+            <div class="pb-feat">Create - add new records</div>
+            <div class="pb-feat">Read - display record list</div>
+            <div class="pb-feat">Update - edit existing records</div>
+            <div class="pb-feat">Delete - remove records</div>
+            <div class="pb-feat">Validation on required fields</div>
+            <div class="pb-feat">Bootstrap-based interface</div>
+            ${banner}
+            <div class="project-actions">
+              <button class="btn btn-primary" ${isTaken ? 'disabled' : ''} onclick="openClaimDialog(${p.num})">Claim Title</button>
+              <span class="claim-note">Optional. A short confirmation opens before anything is reserved.</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    list.appendChild(item);
+  });
+}
+
+function claimProjectTitle(num) {
+  const group = getActiveGroup();
+  const project = getProject(num);
+  if (!group) {
+    alert('Open your group desk with a claim code first.');
+    document.getElementById('group-desk').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (group.titleNum) {
+    alert('This group already claimed a title.');
+    return;
+  }
+  if (getClaim(num)) {
+    alert('That title has already been claimed.');
+    return;
+  }
+  if (!confirm(`Claim "${project.name}" for ${group.name}? This can only be changed by the teacher.`)) return;
+  const suggested = group.code.replace('ASP-', 'group-').toLowerCase();
+  const password = prompt('Set the group password for future access.', suggested);
+  if (!password) return;
+  group.titleNum = num;
+  group.password = password;
+  saveApp();
+  renderAll();
+  alert(`Title claimed. Group password: ${password}`);
+}
+
+function buildAvail() {
+  const grid = document.getElementById('avail-grid');
+  grid.innerHTML = '';
+  projects.forEach(p => {
+    const claim = getClaim(p.num);
+    const cls = claim ? 'is-full' : 'is-open';
+    const pill = claim ? 'pill-full' : 'pill-open';
+    const pillTxt = claim ? 'Claimed' : 'Open';
+    const groupTxt = claim ? claim.name : 'No group yet';
+    const el = document.createElement('div');
+    el.className = `avail-item ${cls}`;
+    el.innerHTML = `<span class="avail-name">${p.recommended?'* ':''}${p.name}</span><span class="avail-groups">${escapeHtml(groupTxt)}</span><span class="avail-pill ${pill}">${pillTxt}</span>`;
+    grid.appendChild(el);
+  });
+}
+
+function openAdmin() {
+  const pass = document.getElementById('admin-pass').value;
+  if (pass !== 'teacher123') {
+    alert('Default admin password is teacher123.');
+    return;
+  }
+  document.getElementById('admin-panel').classList.add('show');
+  renderAdmin();
+}
+
+function closeAdmin() { document.getElementById('admin-panel').classList.remove('show'); }
+
+function saveRoster() {
+  const names = document.getElementById('roster-input').value.split('\n').map(n => n.trim()).filter(Boolean);
+  app.roster = Array.from(new Set(names));
+  saveApp();
+  renderAll();
+  renderAdmin();
+}
+
+function loadSampleRoster() {
+  document.getElementById('roster-input').value = Array.from({length:43}, (_,i) => `Student ${String(i + 1).padStart(2,'0')}`).join('\n');
+  saveRoster();
+}
+
+function renderAdmin() {
+  document.getElementById('roster-input').value = app.roster.join('\n');
+  document.getElementById('sum-groups').textContent = app.groups.length;
+  document.getElementById('sum-claimed').textContent = app.groups.filter(g => g.titleNum).length;
+  document.getElementById('sum-codes').textContent = claimCodes.length - app.groups.length;
+  const assigned = new Set(app.groups.flatMap(g => g.members.map(m => m.toLowerCase())));
+  const ungrouped = app.roster.filter(name => !assigned.has(name.toLowerCase()));
+  document.getElementById('sum-ungrouped').textContent = ungrouped.length;
+  document.getElementById('ungrouped-list').innerHTML = ungrouped.map(name => `<div class="admin-row"><span>${escapeHtml(name)}</span></div>`).join('') || '<div class="muted-empty">No ungrouped students.</div>';
+  document.getElementById('admin-groups').innerHTML = app.groups.map(group => {
+    const title = group.titleNum ? getProject(group.titleNum).name : 'No title claimed';
+    const members = group.members.map(name => `
+      <div class="person-row">
+        <span>${escapeHtml(name)}</span>
+        <span>
+          <select onchange="moveMember(decodeURIComponent('${encodeURIComponent(name)}'), this.value)">
+            <option value="">Move to...</option>
+            ${app.groups.filter(g => g.id !== group.id).map(g => `<option value="${g.id}">${g.name}</option>`).join('')}
+          </select>
+        </span>
+      </div>
+    `).join('');
+    return `<div class="admin-row" style="display:block;">
+      <div style="display:flex;justify-content:space-between;gap:0.75rem;">
+        <strong>${escapeHtml(group.name)}</strong>
+        <span class="badge ${group.titleNum?'badge-green':'badge-muted'}" style="margin:0;">${escapeHtml(title)}</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin:4px 0 8px;">${group.code} · ${group.members.length}/6 members</div>
+      ${members || '<div class="muted-empty">No members.</div>'}
+    </div>`;
+  }).join('') || '<div class="muted-empty">No groups opened yet.</div>';
+}
+
+function moveMember(name, targetGroupId) {
+  if (!targetGroupId) return;
+  const target = app.groups.find(g => g.id === targetGroupId);
+  if (!target || target.members.length >= 6) {
+    alert('Target group is already full.');
+    renderAdmin();
+    return;
+  }
+  app.groups.forEach(g => { g.members = g.members.filter(m => m !== name); });
+  target.members.push(name);
+  saveApp();
+  renderAll();
+  renderAdmin();
+}
+
+function resetDemoData() {
+  if (!confirm('Reset all prototype group, roster, and title data in this browser?')) return;
+  localStorage.removeItem(appKey);
+  localStorage.removeItem(activeGroupKey);
+  app = { roster: [], groups: [], usedCodes: [] };
+  activeGroupId = '';
+  renderAll();
+  renderAdmin();
+}
+
+function renderAll() {
+  renderGroupDesk();
+  buildProjects();
+  buildAvail();
+  if (document.getElementById('dashboard-modal').classList.contains('show')) renderDashboard();
+}
+
+const propKey = 'aspnet_proposal_checklist';
+let propState = JSON.parse(localStorage.getItem(propKey) || '[false,false,false,false,false,false,false,false,false]');
+
+function initProposal() {
+  propState.forEach((checked,i) => {
+    const el = document.querySelector(`#pi-${i} .prop-cb`);
+    if(el) { el.checked = checked; if(checked) document.getElementById('pi-'+i).classList.add('done'); }
+  });
+  updateProgress();
+}
+
+function toggleProp(i, cb) {
+  propState[i] = cb.checked;
+  document.getElementById('pi-'+i).classList.toggle('done', cb.checked);
+  localStorage.setItem(propKey, JSON.stringify(propState));
+  updateProgress();
+}
+
+function updateProgress() {
+  const done = propState.filter(Boolean).length;
+  const total = propState.length;
+  document.getElementById('progress-count').textContent = `${done} / ${total}`;
+  document.getElementById('progress-fill').style.width = `${(done/total)*100}%`;
+}
+
+renderAll();
+initProposal();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="student_supabase.js"></script>
+</body>
+</html>
