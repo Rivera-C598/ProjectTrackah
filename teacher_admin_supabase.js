@@ -118,6 +118,54 @@
     }
   };
 
+  window.deleteCode = async function (codeId) {
+    try {
+      await rpc("teacher_delete_code", { p_section_id: currentSectionId, p_code_id: codeId });
+      await loadSectionDetail();
+      render();
+    } catch (err) {
+      alert(err.message || "Could not delete code.");
+    }
+  };
+
+  window.deleteUnusedCodes = async function () {
+    if (!currentSectionId) return;
+    const unusedCount = detail.codes.filter(c => !c.used).length;
+    if (unusedCount === 0) { alert("No unused codes to delete."); return; }
+    if (!confirm(`Delete ${unusedCount} unused code(s) for this section?`)) return;
+    try {
+      const deleted = await rpc("teacher_delete_unused_codes", { p_section_id: currentSectionId });
+      await loadSectionDetail();
+      render();
+      alert(`Deleted ${deleted} unused code(s).`);
+    } catch (err) {
+      alert(err.message || "Could not delete unused codes.");
+    }
+  };
+
+  window.removeGroup = async function (groupId, groupName) {
+    if (!confirm(`Remove group "${groupName}"? This deletes the group, all its members, and frees the claim code and project title.`)) return;
+    try {
+      await rpc("teacher_remove_group", { p_group_id: groupId });
+      await loadSectionDetail();
+      render();
+    } catch (err) {
+      alert(err.message || "Could not remove group.");
+    }
+  };
+
+  window.resetAllClaims = async function () {
+    if (!currentSectionId) return;
+    if (!confirm("Reset ALL claims for this section? This deletes every group and frees all claim codes. Roster is kept. This cannot be undone.")) return;
+    try {
+      await rpc("teacher_reset_claims", { p_section_id: currentSectionId });
+      await loadSectionDetail();
+      render();
+    } catch (err) {
+      alert(err.message || "Could not reset claims.");
+    }
+  };
+
   window.resetData = function () {
     alert("For Supabase, reset data from the Supabase Table Editor or SQL editor. Prototype local reset is disabled while Supabase is configured.");
   };
@@ -138,11 +186,15 @@
       <div class="row">
         <span>${esc(code.code)}</span>
         <span class="pill ${code.used ? "ok" : ""}">${code.used ? esc(code.groupName) : "Unused"}</span>
+        ${!code.used ? `<button class="btn btn-danger btn-small" onclick="deleteCode('${code.id}')">Delete</button>` : ""}
       </div>`).join("") || '<div class="muted">No codes yet.</div>';
 
     document.getElementById("groups-list").innerHTML = detail.groups.map(g => `
       <div class="row" style="display:block;">
-        <strong>${esc(g.name)}</strong> <span class="pill ok">${esc(g.projectTitle)}</span>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
+          <div><strong>${esc(g.name)}</strong> <span class="pill ok">${esc(g.projectTitle)}</span></div>
+          <button class="btn btn-danger btn-small" onclick="removeGroup('${g.id}', '${esc(g.name)}')">Remove</button>
+        </div>
         <div class="muted">${g.members.length}/6 members</div>
         <div>${g.members.map(esc).join(", ") || "No members"}</div>
         <div style="margin-top:0.5rem;">

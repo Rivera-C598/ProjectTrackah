@@ -24,6 +24,7 @@
   .btn { border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); padding: 8px 12px; font: inherit; font-weight: 700; cursor: pointer; }
   .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .btn-danger { background: rgba(185,28,28,0.08); color: var(--red); border-color: rgba(185,28,28,0.2); }
+  .btn-small { padding: 4px 8px; font-size: 12px; }
   .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
   .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1rem; }
   .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem; }
@@ -92,14 +93,15 @@
           <button class="btn" onclick="createSection()">Create Section</button>
           <button class="btn btn-primary" onclick="saveRoster()">Save Roster</button>
           <button class="btn" onclick="loadSampleRoster()">Load Sample 43</button>
-          <button class="btn" onclick="generateCodes()">Generate 12 Codes</button>
-          <button class="btn btn-danger" onclick="resetData()">Reset Prototype Data</button>
+          <button class="btn" onclick="generateCodes()">Generate Codes</button>
+          <button class="btn btn-danger" onclick="deleteUnusedCodes()">Delete Unused Codes</button>
+          <button class="btn btn-danger" onclick="resetAllClaims()">Reset All Claims</button>
         </div>
       </div>
 
       <div class="card">
         <h2>Claim Codes</h2>
-        <p style="margin-bottom:0.75rem;">Use these as the teacher-issued codes. In Supabase, each section gets its own generated code set.</p>
+        <p style="margin-bottom:0.75rem;">Hand these codes to group leaders. Used codes are locked to their group. Unused codes can be deleted individually.</p>
         <div id="codes-list"></div>
       </div>
     </div>
@@ -117,68 +119,6 @@
   </div>
 </div>
 
-<script>
-const appKey = 'aspnet_group_claims_v1';
-const claimCodes = ['ASP-BRAVO','ASP-CHARLIE','ASP-DELTA','ASP-ECHO','ASP-FOXTROT','ASP-GOLF','ASP-HOTEL','ASP-INDIA','ASP-JULIET','ASP-KILO','ASP-LIMA'];
-const projects = [
-  'Student Record Management System','Product Inventory Management System','Employee Record Management System','Appointment Record Management System','Customer Information Management System','Book Inventory Management System','Clinic Patient Record System','Supplier Management System','Sales Item Record System','Simple Ordering Record System','Library Borrower Record System','Equipment Borrowing System','Room Reservation Record System','Service Request Management System','Vehicle Maintenance Record System'
-];
-let app = JSON.parse(localStorage.getItem(appKey) || 'null') || { roster: [], groups: [], usedCodes: [], section: { name: '', teacherEmails: '' } };
-app.section = app.section || { name: '', teacherEmails: '' };
-
-function saveApp() { localStorage.setItem(appKey, JSON.stringify(app)); }
-function esc(value) { return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function openAdmin() {
-  if (document.getElementById('admin-pass').value !== 'teacher123') {
-    alert('Default admin password is teacher123.');
-    return;
-  }
-  document.getElementById('login-card').style.display = 'none';
-  document.getElementById('admin-area').style.display = 'block';
-  render();
-}
-function saveRoster() {
-  app.section.name = document.getElementById('section-name').value.trim();
-  app.section.teacherEmails = document.getElementById('teacher-emails').value.trim();
-  app.roster = Array.from(new Set(document.getElementById('roster-input').value.split('\n').map(n => n.trim()).filter(Boolean)));
-  saveApp();
-  render();
-}
-function loadSampleRoster() {
-  document.getElementById('roster-input').value = Array.from({ length: 43 }, (_, i) => `Student ${String(i + 1).padStart(2, '0')}`).join('\n');
-  saveRoster();
-}
-function resetData() {
-  if (!confirm('Reset all prototype data in this browser?')) return;
-  app = { roster: [], groups: [], usedCodes: [], section: { name: '', teacherEmails: '' } };
-  saveApp();
-  render();
-}
-function render() {
-  document.getElementById('section-name').value = app.section.name || '';
-  document.getElementById('teacher-emails').value = app.section.teacherEmails || '';
-  document.getElementById('roster-input').value = app.roster.join('\n');
-  const assigned = new Set(app.groups.flatMap(g => g.members.map(m => m.toLowerCase())));
-  const ungrouped = app.roster.filter(name => !assigned.has(name.toLowerCase()));
-  document.getElementById('sum-groups').textContent = app.groups.length;
-  document.getElementById('sum-claims').textContent = app.groups.filter(g => g.titleNum).length;
-  document.getElementById('sum-roster').textContent = app.roster.length;
-  document.getElementById('sum-ungrouped').textContent = ungrouped.length;
-  document.getElementById('codes-list').innerHTML = claimCodes.map(code => {
-    const group = app.groups.find(g => g.code === code);
-    return `<div class="row"><span>${code}</span><span class="pill ${group ? 'ok' : ''}">${group ? group.name : 'Unused'}</span></div>`;
-  }).join('');
-  document.getElementById('groups-list').innerHTML = app.groups.map(g => {
-    const title = g.titleNum ? projects[g.titleNum - 1] : 'No title';
-    return `<div class="row" style="display:block;">
-      <strong>${esc(g.name)}</strong> <span class="pill ${g.titleNum ? 'ok' : ''}">${esc(title)}</span>
-      <div class="muted">${g.code} · ${g.members.length}/6 members</div>
-      <div>${g.members.map(esc).join(', ') || 'No members'}</div>
-    </div>`;
-  }).join('') || '<div class="muted">No groups yet.</div>';
-  document.getElementById('ungrouped-list').innerHTML = ungrouped.map(name => `<div class="row"><span>${esc(name)}</span></div>`).join('') || '<div class="muted">No ungrouped students.</div>';
-}
-</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="teacher_admin_supabase.js"></script>

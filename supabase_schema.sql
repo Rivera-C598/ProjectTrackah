@@ -553,6 +553,71 @@ begin
 end;
 $$;
 
+drop function if exists public.teacher_delete_code(uuid, uuid);
+create function public.teacher_delete_code(p_section_id uuid, p_code_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_section_teacher(p_section_id) then raise exception 'Not allowed'; end if;
+  if exists (select 1 from public.claim_codes where id = p_code_id and used_at is not null) then
+    raise exception 'Code is already in use by a group';
+  end if;
+  delete from public.claim_codes where id = p_code_id and section_id = p_section_id and used_at is null;
+end;
+$$;
+
+drop function if exists public.teacher_delete_unused_codes(uuid);
+create function public.teacher_delete_unused_codes(p_section_id uuid)
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_count int;
+begin
+  if not public.is_section_teacher(p_section_id) then raise exception 'Not allowed'; end if;
+  delete from public.claim_codes where section_id = p_section_id and used_at is null;
+  get diagnostics v_count = row_count;
+  return v_count;
+end;
+$$;
+
+drop function if exists public.teacher_remove_group(uuid);
+create function public.teacher_remove_group(p_group_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.groups%rowtype;
+begin
+  select * into v_group from public.groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+  if not public.is_section_teacher(v_group.section_id) then raise exception 'Not allowed'; end if;
+  delete from public.groups where id = p_group_id;
+  update public.claim_codes set used_at = null where id = v_group.code_id;
+end;
+$$;
+
+drop function if exists public.teacher_reset_claims(uuid);
+create function public.teacher_reset_claims(p_section_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_section_teacher(p_section_id) then raise exception 'Not allowed'; end if;
+  delete from public.groups where section_id = p_section_id;
+  update public.claim_codes set used_at = null where section_id = p_section_id;
+end;
+$$;
+
 drop function if exists public.teacher_move_member(uuid, uuid);
 create function public.teacher_move_member(p_student_id uuid, p_target_group_id uuid)
 returns void
