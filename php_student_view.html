@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PHP + MySQL — Final Project</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141416;
+    --surface2: #1a1a1e;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0ede8;
+    --muted: #888580;
+    --accent: #e8611a;
+    --accent2: #ff8c4b;
+    --accent-dim: rgba(232,97,26,0.12);
+    --accent-dim2: rgba(232,97,26,0.06);
+    --green: #3ecf8e;
+    --green-dim: rgba(62,207,142,0.1);
+    --green-border: rgba(62,207,142,0.2);
+    --blue: #5b8def;
+    --blue-dim: rgba(91,141,239,0.1);
+    --amber: #f5c842;
+    --amber-dim: rgba(245,200,66,0.1);
+    --red: #f04747;
+    --red-dim: rgba(240,71,71,0.1);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.6; min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.4;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 2rem 6rem; position: relative; z-index: 1; }
+
+  .header { padding: 4rem 0 3rem; border-bottom: 1px solid var(--border); margin-bottom: 3rem; }
+  .header-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-dim);
+    border: 1px solid rgba(232,97,26,0.2); padding: 4px 12px; border-radius: 20px; margin-bottom: 1.25rem;
+  }
+  .header h1 { font-family: 'Syne', sans-serif; font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 0.75rem; }
+  .header h1 span { color: var(--accent); }
+  .header p { color: var(--muted); font-size: 15px; max-width: 520px; font-weight: 300; }
+
+  .nav-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 3rem; }
+  .nav-pill {
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 20px; cursor: pointer; text-decoration: none; transition: all 0.2s;
+  }
+  .nav-pill:hover { color: var(--text); border-color: var(--border2); }
+
+  .section { margin-bottom: 3rem; }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
+  .section-num {
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+    color: var(--accent); background: var(--accent-dim);
+    width: 24px; height: 24px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 0.75rem; }
+  .card-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+  .card-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  .card-value { font-size: 14px; color: var(--text); font-weight: 500; }
+  .card-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  .badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; margin-bottom: 6px; }
+  .badge-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(62,207,142,0.2); }
+  .badge-blue { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(91,141,239,0.2); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,200,66,0.2); }
+  .badge-muted { background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid var(--border); }
+  .badge-accent { background: var(--accent-dim); color: var(--accent2); border: 1px solid rgba(232,97,26,0.2); }
+  .badge-red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(240,71,71,0.2); }
+
+  .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); }
+  .check-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .check-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); margin-top: 8px; flex-shrink: 0; }
+
+  /* project tiles */
+  .project-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 0.5rem; overflow: hidden; transition: border-color 0.2s; }
+  .project-item.open { border-color: rgba(232,97,26,0.35); }
+  .project-item.recommended { border-color: rgba(232,97,26,0.2); }
+  .project-item.taken { border-color: rgba(240,71,71,0.25); opacity: 0.6; }
+  .project-item.taken-open { border-color: rgba(240,71,71,0.25); }
+
+  .project-trigger {
+    width: 100%; background: none; border: none; padding: 1rem 1.25rem;
+    display: flex; align-items: center; gap: 12px; cursor: pointer; text-align: left; color: var(--text); transition: background 0.15s;
+  }
+  .project-trigger:hover { background: rgba(255,255,255,0.02); }
+  .project-num { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; color: var(--muted); min-width: 24px; }
+  .project-name { font-size: 14px; font-weight: 500; flex: 1; }
+  .project-chevron { color: var(--muted); font-size: 12px; transition: transform 0.25s; margin-left: auto; }
+  .project-item.open .project-chevron { transform: rotate(180deg); }
+
+  .project-body { display: none; padding: 0 1.25rem 1.25rem; border-top: 1px solid var(--border); }
+  .project-item.open .project-body { display: block; }
+  .project-body-inner { padding-top: 1rem; }
+  .pb-section { margin-bottom: 1rem; }
+  .pb-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-bottom: 6px; }
+  .pb-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pb-tag { font-size: 12px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); padding: 3px 10px; border-radius: 4px; }
+
+  /* availability banner inside card */
+  .avail-banner {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: 8px; margin-top: 1rem;
+    font-size: 13px; font-weight: 500;
+  }
+  .avail-banner.open-banner { background: var(--green-dim); color: var(--green); border: 1px solid var(--green-border); }
+  .avail-banner.taken-banner { background: var(--red-dim); color: var(--red); border: 1px solid rgba(240,71,71,0.2); }
+  .avail-banner.partial-banner { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,200,66,0.2); }
+  .avail-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  /* availability grid */
+  .avail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.5rem; }
+  .avail-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    font-size: 13px; gap: 10px;
+  }
+  .avail-item.is-open { border-color: rgba(62,207,142,0.2); }
+  .avail-item.is-partial { border-color: rgba(245,200,66,0.2); }
+  .avail-item.is-full { border-color: rgba(240,71,71,0.15); opacity:0.55; }
+  .avail-name { flex: 1; font-weight: 400; color: var(--text); }
+  .avail-pill {
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 2px 8px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+  }
+  .pill-open { background: var(--green-dim); color: var(--green); }
+  .pill-partial { background: var(--amber-dim); color: var(--amber); }
+  .pill-full { background: var(--red-dim); color: var(--red); }
+  .avail-groups { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* proposal checklist */
+  .prop-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .prop-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .prop-cb {
+    width: 17px; height: 17px; border-radius: 4px; border: 1.5px solid var(--border2);
+    background: none; cursor: pointer; flex-shrink: 0; appearance: none; -webkit-appearance: none;
+    transition: all 0.15s; position: relative; margin-top: 2px;
+  }
+  .prop-cb:checked { background: var(--accent); border-color: var(--accent); }
+  .prop-cb:checked::after {
+    content: ''; position: absolute; left: 3px; top: 1px;
+    width: 5px; height: 8px; border: 2px solid #0d0d0f;
+    border-top: none; border-left: none; transform: rotate(45deg);
+  }
+  .prop-text { font-size: 14px; color: var(--text); flex: 1; line-height: 1.5; }
+  .prop-text small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .prop-item.done .prop-text { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(255,255,255,0.2); }
+
+  /* cp rows */
+  .cp-row { display: flex; gap: 1rem; align-items: flex-start; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+  .cp-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .cp-tag {
+    font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(232,97,26,0.2);
+    padding: 3px 8px; border-radius: 4px; white-space: nowrap; margin-top: 2px; min-width: 52px; text-align: center;
+  }
+  .cp-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .cp-desc { font-size: 13px; color: var(--muted); }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.75rem; }
+  .tag { font-size: 12px; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--muted); }
+  .tag.optional { border-style: dashed; }
+
+  .note { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; font-size: 13px; color: var(--muted); margin-top: 0.75rem; }
+
+  /* progress bar */
+  .progress-wrap { margin-top: 1rem; }
+  .progress-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .progress-bar { height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    .card-grid-3 { grid-template-columns: 1fr; }
+    .avail-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="header">
+    <div style="margin-bottom:0.75rem;"><a href="index.html" style="font-size:12px;color:var(--muted);text-decoration:none;opacity:0.7;">← Back</a></div>
+    <div class="header-tag">Student View — Final Project</div>
+    <h1>PHP + MySQL<br><span>Final Project</span></h1>
+    <p>Everything you need to know — requirements, project options, checkpoints, and your proposal checklist.</p>
+  </header>
+
+  <nav class="nav-pills">
+    <a class="nav-pill" href="#requirements">Requirements</a>
+    <a class="nav-pill" href="#projects">Choose a Title</a>
+    <a class="nav-pill" href="#availability">Availability</a>
+    <a class="nav-pill" href="#checkpoints">Checkpoints</a>
+    <a class="nav-pill" href="#proposal-checklist">Proposal Checklist</a>
+  </nav>
+
+  <!-- REQUIREMENTS -->
+  <section class="section" id="requirements">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-title">What Your Project Must Have</div>
+    </div>
+
+    <div class="card-grid-3" style="margin-bottom:0.75rem;">
+      <div class="card">
+        <div class="badge badge-accent">Stack</div>
+        <div class="card-value">PHP + MySQL</div>
+        <div class="card-sub">Developed locally using XAMPP</div>
+      </div>
+      <div class="card">
+        <div class="badge badge-green">Tables</div>
+        <div class="card-value">At least 2</div>
+        <div class="card-sub">Must be related to each other</div>
+      </div>
+      <div class="card">
+        <div class="badge badge-blue">Interface</div>
+        <div class="card-value">Clean + Usable</div>
+        <div class="card-sub">At least 1 JS or jQuery feature</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.75rem;">Full CRUD — all four are required</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1.5rem;">
+        <div>
+          <div class="check-item"><div class="check-dot"></div>Create — add new records</div>
+          <div class="check-item"><div class="check-dot"></div>Read — display records</div>
+          <div class="check-item"><div class="check-dot"></div>Update — edit records</div>
+          <div class="check-item"><div class="check-dot"></div>Delete — remove records</div>
+          <div class="check-item"><div class="check-dot"></div>MySQL database integration</div>
+          <div class="check-item"><div class="check-dot"></div>At least 2 related tables</div>
+        </div>
+        <div>
+          <div class="check-item"><div class="check-dot"></div>One main module</div>
+          <div class="check-item"><div class="check-dot"></div>One linked dropdown field</div>
+          <div class="check-item"><div class="check-dot"></div>Delete confirmation</div>
+          <div class="check-item"><div class="check-dot"></div>Basic validation</div>
+          <div class="check-item"><div class="check-dot"></div>Clean, usable UI</div>
+          <div class="check-item"><div class="check-dot"></div>Hosted online (optional)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.75rem;">Minimum pages your project needs</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <span class="badge badge-blue">Dashboard / Home</span>
+        <span class="badge badge-blue">List / View page</span>
+        <span class="badge badge-blue">Add form</span>
+        <span class="badge badge-blue">Edit form</span>
+        <span class="badge badge-blue">Delete action</span>
+        <span class="badge badge-blue">DB connection file</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.5rem;">Nice to have — optional bonuses</div>
+      <div class="tag-row" style="margin-top:0;">
+        <span class="tag optional">Search / filter</span>
+        <span class="tag optional">Image upload</span>
+        <span class="tag optional">Status badges</span>
+        <span class="tag optional">Dashboard counts</span>
+        <span class="tag optional">Simple reports</span>
+        <span class="tag optional">AJAX / jQuery</span>
+        <span class="tag optional">Dark mode</span>
+        <span class="tag optional">Printable page</span>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong style="color:var(--text)">Not allowed:</strong> Full e-commerce checkout · chat systems · social media clone · ride-hailing app · full LMS · complex authentication/roles · huge dashboards
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- PROJECT TITLES -->
+  <section class="section" id="projects">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-title">Choose a Project Title</div>
+    </div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:0.75rem;">Click any title to read its full description, suggested tables, and required features. <span style="color:var(--accent);">★</span> = recommended starting points.</p>
+    <div class="note" style="margin-bottom:1.25rem;">
+      <strong style="color:var(--text)">To reserve a title:</strong> These are for reference only — titles are not claimed through this page. If you want a specific title, <strong style="color:var(--text)">contact your instructor directly</strong> to have it assigned.
+    </div>
+    <div id="project-list"></div>
+  </section>
+
+  <hr>
+
+  <!-- AVAILABILITY -->
+  <section class="section" id="availability">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div class="section-title">Title Availability</div>
+    </div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:1.25rem;">Max 2 groups per title. Title assignments are managed by your instructor — <strong style="color:var(--text)">contact them directly</strong> to reserve a title.</p>
+    <div class="card" style="display:flex; gap:1.5rem; flex-wrap:wrap; padding:1rem 1.5rem; margin-bottom:1rem;">
+      <span style="display:flex;align-items:center;gap:6px;font-size:13px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span>Open — both slots free</span>
+      <span style="display:flex;align-items:center;gap:6px;font-size:13px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--amber);display:inline-block;"></span>1 slot left</span>
+      <span style="display:flex;align-items:center;gap:6px;font-size:13px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;"></span>Full — 2 groups taken</span>
+    </div>
+    <div class="avail-grid" id="avail-grid"></div>
+  </section>
+
+  <hr>
+
+  <!-- CHECKPOINTS -->
+  <section class="section" id="checkpoints">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div class="section-title">Project Checkpoints</div>
+    </div>
+    <div class="card">
+      <div class="cp-row">
+        <div class="cp-tag">CP 1</div>
+        <div>
+          <div class="cp-title">Project Proposal</div>
+          <div class="cp-desc">Submit group members, chosen title, purpose, list of fields, planned pages, and member roles</div>
+        </div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-tag">CP 2</div>
+        <div>
+          <div class="cp-title">Database Setup</div>
+          <div class="cp-desc">Show working database and tables, DB connection file, basic schema</div>
+        </div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-tag">CP 3</div>
+        <div>
+          <div class="cp-title">Create and Read</div>
+          <div class="cp-desc">Working add form and records displaying on your list/view page</div>
+        </div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-tag">CP 4</div>
+        <div>
+          <div class="cp-title">Update and Delete</div>
+          <div class="cp-desc">Edit form working, delete with confirmation working</div>
+        </div>
+      </div>
+      <div class="cp-row">
+        <div class="cp-tag">Final</div>
+        <div>
+          <div class="cp-title">Presentation and Demo</div>
+          <div class="cp-desc">Live CRUD demo, validation shown, real database records, each member explains their part</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- PROPOSAL CHECKLIST -->
+  <section class="section" id="proposal-checklist">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div class="section-title">Proposal Checklist</div>
+    </div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:1.25rem;">Use this to make sure your proposal has everything before submitting. Your progress saves in this browser.</p>
+
+    <div class="card" id="proposal-card">
+      <div class="prop-item" id="pi-0">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(0,this)">
+        <div class="prop-text">Project title chosen and confirmed available
+          <small>Check the availability section above — first approved, first reserved</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-1">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(1,this)">
+        <div class="prop-text">All group members listed with full names
+          <small>Include everyone — partial submissions won't be approved</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-2">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(2,this)">
+        <div class="prop-text">Purpose of the app written out
+          <small>A short paragraph — who uses it, what problem it solves</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-3">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(3,this)">
+        <div class="prop-text">Proposed tables named (at least 2)
+          <small>e.g. appointments, clients, services</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-4">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(4,this)">
+        <div class="prop-text">Main CRUD features listed
+          <small>What Create, Read, Update, and Delete will do in your system</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-5">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(5,this)">
+        <div class="prop-text">Member roles assigned
+          <small>Who handles database, controller/logic, views/UI, testing</small>
+        </div>
+      </div>
+      <div class="prop-item" id="pi-6">
+        <input type="checkbox" class="prop-cb" onchange="toggleProp(6,this)">
+        <div class="prop-text">Proposal submitted to instructor for approval
+          <small>You cannot start building until your proposal is approved</small>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Proposal progress</span>
+          <span id="progress-count">0 / 7</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong style="color:var(--text)">Reminder:</strong> 1 title = max 2 groups. All groups follow the same technical requirements. Only approved proposals can proceed to development.
+    </div>
+  </section>
+
+</div>
+
+<script>
+// Availability is managed by the instructor. All titles shown as available here for reference.
+const projects = [
+  { num:1, recommended:true, name:"Creator Content Planner", desc:"A web app for managing content ideas for TikTok, YouTube, Facebook, or Instagram.", tables:["content_posts","platforms","categories"], features:["Add, edit, delete content ideas","Assign platform and category","Set posting date","Track status: Draft / Scheduled / Posted"] },
+  { num:2, recommended:true, name:"Small Business Order Tracker", desc:"Track customer orders for a small online business.", tables:["orders","customers","products"], features:["Add, edit, delete orders","Assign customer and product","Track order status","View order list"] },
+  { num:3, recommended:true, name:"Appointment Booking System", desc:"A booking system for consultation, advising, salon, clinic, or school services.", tables:["appointments","clients","services"], features:["Add, edit, delete appointments","Assign client and service","Track schedule date/time","Show booking list"] },
+  { num:4, recommended:true, name:"Personal Expense Tracker", desc:"A budgeting and spending tracker.", tables:["expenses","categories","payment_methods"], features:["Add, edit, delete expenses","Assign category and payment method","Show amount and date","Display records clearly"] },
+  { num:5, recommended:false, name:"Habit / Productivity Tracker", desc:"A web app for tracking habits, study goals, or daily productivity.", tables:["habits","habit_logs","categories"], features:["Add, edit, delete habits","Assign category","Record daily progress","Show status or streak-like records"] },
+  { num:6, recommended:true, name:"Campus Lost and Found Tracker", desc:"A system for managing lost and found items in school.", tables:["items","categories","claimers"], features:["Add, edit, delete lost/found items","Assign category","Track item status","Record claimant info if claimed"] },
+  { num:7, recommended:false, name:"Digital Portfolio Manager", desc:"A system for storing student projects, achievements, and skills.", tables:["portfolio_items","skills","categories"], features:["Add, edit, delete portfolio items","Assign category and skill","Display project details"] },
+  { num:8, recommended:false, name:"Event Registration Tracker", desc:"A system for managing event sign-ups.", tables:["events","participants","registrations"], features:["Add, edit, delete events","Register participants","Update registration status","Show event participant list"] },
+  { num:9, recommended:false, name:"Student Freelance Project Tracker", desc:"A web app for managing small freelance projects, clients, and deadlines.", tables:["projects","clients","statuses"], features:["Add, edit, delete projects","Assign client and status","Track due dates"] },
+  { num:10, recommended:false, name:"E-Learning Resource Organizer", desc:"A system for organizing notes, links, videos, and study materials.", tables:["resources","subjects","resource_types"], features:["Add, edit, delete resources","Assign subject and resource type","Save link or description"] },
+  { num:11, recommended:false, name:"Food Menu and Order Request System", desc:"A simple menu and order request tracker.", tables:["menu_items","categories","orders"], features:["Add, edit, delete menu items","Assign category","Create order requests","Update order status"] },
+  { num:12, recommended:false, name:"Gym Workout Log System", desc:"A system for workout routines and exercise logs.", tables:["workouts","exercise_categories","workout_logs"], features:["Add, edit, delete workouts","Assign category","Log workout sessions","Show progress records"] },
+  { num:13, recommended:false, name:"Dorm / Boarding House Tenant Tracker", desc:"A system for managing rooms, tenants, and payments.", tables:["tenants","rooms","payments"], features:["Add, edit, delete tenants","Assign room","Record payments","Update room status"] },
+  { num:14, recommended:false, name:"Gadget Borrowing Tracker", desc:"A system for monitoring borrowed gadgets or equipment.", tables:["devices","borrowers","borrow_logs"], features:["Add, edit, delete devices","Assign borrower","Track borrow/return dates","Update borrow status"] },
+  { num:15, recommended:true, name:"Online Shop Product Catalog Manager", desc:"A mini admin panel for a product catalog.", tables:["products","categories","brands"], features:["Add, edit, delete products","Assign category and brand","Show price and stock"] }
+];
+
+function buildProjects() {
+  const list = document.getElementById('project-list');
+  projects.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'project-item' + (p.recommended ? ' recommended' : '');
+    item.innerHTML = `
+      <button class="project-trigger" onclick="toggleProject(this)">
+        <span class="project-num">${String(p.num).padStart(2,'0')}</span>
+        <span class="project-name">${p.name}${p.recommended?' <span style="color:var(--accent);font-size:11px;">★</span>':''}</span>
+        <span class="badge ${p.recommended?'badge-accent':'badge-muted'}" style="margin:0;">${p.recommended?'Recommended':'Available'}</span>
+        <span class="project-chevron">▼</span>
+      </button>
+      <div class="project-body">
+        <div class="project-body-inner">
+          <div class="pb-section">
+            <div class="pb-label">Description</div>
+            <div style="font-size:13px;color:var(--muted);">${p.desc}</div>
+          </div>
+          <div class="pb-section">
+            <div class="pb-label">Suggested Tables</div>
+            <div class="pb-tags">${p.tables.map(t=>`<span class="pb-tag">${t}</span>`).join('')}</div>
+          </div>
+          <div class="pb-section" style="margin-bottom:0;">
+            <div class="pb-label">Required Features</div>
+            ${p.features.map(f=>`<div class="check-item" style="padding:5px 0;"><div class="check-dot"></div><span style="font-size:13px;">${f}</span></div>`).join('')}
+          </div>
+          <div class="avail-banner open-banner" style="margin-top:1rem;">
+            <div class="avail-dot"></div>
+            Want this title? <strong style="margin-left:4px;">Contact your instructor to have it assigned.</strong>
+          </div>
+        </div>
+      </div>`;
+    list.appendChild(item);
+  });
+}
+
+function toggleProject(btn) { btn.closest('.project-item').classList.toggle('open'); }
+
+function buildAvail() {
+  const grid = document.getElementById('avail-grid');
+  projects.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'avail-item is-open';
+    item.innerHTML = `<span class="avail-name">${p.recommended?'★ ':''}${p.name}</span><span class="avail-pill pill-open">Open</span>`;
+    grid.appendChild(item);
+  });
+}
+
+// Proposal checklist
+const propKey = 'php_proposal_checklist';
+let propState = JSON.parse(localStorage.getItem(propKey) || '[false,false,false,false,false,false,false]');
+
+function initProposal() {
+  propState.forEach((checked, i) => {
+    const el = document.querySelector(`#pi-${i} .prop-cb`);
+    if (el) { el.checked = checked; if(checked) document.getElementById('pi-'+i).classList.add('done'); }
+  });
+  updateProgress();
+}
+
+function toggleProp(i, cb) {
+  propState[i] = cb.checked;
+  document.getElementById('pi-'+i).classList.toggle('done', cb.checked);
+  localStorage.setItem(propKey, JSON.stringify(propState));
+  updateProgress();
+}
+
+function updateProgress() {
+  const done = propState.filter(Boolean).length;
+  const total = propState.length;
+  document.getElementById('progress-count').textContent = `${done} / ${total}`;
+  document.getElementById('progress-fill').style.width = `${(done/total)*100}%`;
+}
+
+buildProjects();
+buildAvail();
+initProposal();
+</script>
+</body>
+</html>

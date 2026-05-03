@@ -34,6 +34,13 @@
     if (statusLine) statusLine.textContent = message || "";
   }
 
+  function dashboardUrl(code) {
+    const url = new URL("group_dashboard.html", window.location.href);
+    url.searchParams.set("section", sectionSlug);
+    if (code) url.searchParams.set("code", code);
+    return url.href;
+  }
+
   function showSetupNotice() {
     const notice = document.createElement("div");
     notice.className = "card";
@@ -146,17 +153,20 @@
         p_password: password
       });
       window.closeClaimDialog();
-      dashboardCode.value = code;
-      dashboardPass.value = password;
+      sessionStorage.setItem(`aspdash:${sectionSlug}:code`, code);
+      sessionStorage.setItem(`aspdash:${sectionSlug}:password`, password);
       await loadBootstrap();
-      await window.loginDashboard();
-      window.openDashboardDialog(true);
+      window.location.href = dashboardUrl(code);
     } catch (err) {
       setStatus(err.message || "Claim failed.");
     }
   };
 
   window.openDashboardDialog = function (skipLogin) {
+    if (!skipLogin) {
+      window.location.href = dashboardUrl("");
+      return;
+    }
     document.getElementById("dashboard-modal").classList.add("show");
     document.getElementById("dashboard-login").style.display = skipLogin && dashboard ? "none" : "grid";
     document.getElementById("dashboard-content").classList.toggle("show", Boolean(skipLogin && dashboard));
@@ -175,9 +185,9 @@
         p_password: dashboardPass.value
       });
       dashboardPassword = dashboardPass.value;
-      document.getElementById("dashboard-login").style.display = "none";
-      document.getElementById("dashboard-content").classList.add("show");
-      renderDashboard();
+      sessionStorage.setItem(`aspdash:${sectionSlug}:code`, dashboardCode.value.trim());
+      sessionStorage.setItem(`aspdash:${sectionSlug}:password`, dashboardPassword);
+      window.location.href = dashboardUrl(dashboardCode.value.trim());
     } catch (err) {
       alert(err.message || "Code or password did not match.");
     }

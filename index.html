@@ -3,15 +3,137 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Project Trackah</title>
-<meta http-equiv="refresh" content="0; url=aspnet_student_view.html">
-<script>
-  const target = new URL("aspnet_student_view.html", window.location.href);
-  target.search = window.location.search;
-  window.location.replace(target.href);
-</script>
+<title>Final Project Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f11;
+    --surface: #18181c;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0ede8;
+    --muted: #888580;
+
+    --asp-accent: #1a4ed8;
+    --asp-accent-dim: rgba(26,78,216,0.12);
+    --asp-accent-border: rgba(26,78,216,0.25);
+    --asp-glow: rgba(26,78,216,0.08);
+
+    --php-accent: #e8611a;
+    --php-accent-dim: rgba(232,97,26,0.12);
+    --php-accent-border: rgba(232,97,26,0.25);
+    --php-glow: rgba(232,97,26,0.08);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.6;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 2rem;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.4;
+  }
+
+  .wrap { max-width: 680px; width: 100%; position: relative; z-index: 1; text-align: center; }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border2); padding: 4px 14px; border-radius: 20px;
+    margin-bottom: 2rem;
+  }
+  .eyebrow-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); }
+
+  h1 {
+    font-family: 'Syne', sans-serif; font-size: clamp(2.2rem, 6vw, 3.6rem);
+    font-weight: 700; line-height: 1.05; letter-spacing: -0.03em;
+    margin-bottom: 1rem;
+  }
+  .sub {
+    color: var(--muted); font-size: 15px; font-weight: 300; max-width: 400px; margin: 0 auto 3.5rem;
+  }
+
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .card {
+    display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem 1.75rem; text-decoration: none; color: var(--text);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    position: relative; overflow: hidden; text-align: left;
+  }
+  .card-glow {
+    position: absolute; top: -60px; right: -60px;
+    width: 200px; height: 200px; border-radius: 50%;
+    pointer-events: none; transition: opacity 0.3s;
+  }
+  .card-asp .card-glow { background: radial-gradient(circle, var(--asp-glow) 0%, transparent 70%); }
+  .card-php .card-glow { background: radial-gradient(circle, var(--php-glow) 0%, transparent 70%); }
+
+  .card-asp { border-color: var(--asp-accent-border); }
+  .card-php { border-color: var(--php-accent-border); }
+  .card-asp:hover { border-color: var(--asp-accent); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(26,78,216,0.12); }
+  .card-php:hover { border-color: var(--php-accent); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(232,97,26,0.12); }
+
+  .card-label {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 4px; margin-bottom: 1.25rem; width: fit-content;
+  }
+  .card-asp .card-label { background: var(--asp-accent-dim); color: var(--asp-accent); border: 1px solid var(--asp-accent-border); }
+  .card-php .card-label { background: var(--php-accent-dim); color: var(--php-accent); border: 1px solid var(--php-accent-border); }
+
+  .card-title { font-family: 'Syne', sans-serif; font-size: 1.35rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.6rem; }
+  .card-desc { font-size: 13px; color: var(--muted); font-weight: 300; line-height: 1.55; flex: 1; }
+
+  .card-arrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; margin-top: 1.5rem;
+    transition: gap 0.2s;
+  }
+  .card-asp .card-arrow { color: var(--asp-accent); }
+  .card-php .card-arrow { color: var(--php-accent); }
+  .card:hover .card-arrow { gap: 10px; }
+
+  .footer { margin-top: 3rem; font-size: 12px; color: var(--muted); }
+
+  @media (max-width: 520px) {
+    .cards { grid-template-columns: 1fr; }
+    h1 { font-size: 2rem; }
+  }
+</style>
 </head>
 <body>
-  <p>Opening <a href="aspnet_student_view.html">Project Trackah</a>...</p>
+<div class="wrap">
+  <div class="eyebrow"><span class="eyebrow-dot"></span>Final Project</div>
+  <h1>Which subject<br>are you in?</h1>
+  <p class="sub">Pick your subject below to see requirements, project titles, and everything you need to get started.</p>
+
+  <div class="cards">
+    <a class="card card-asp" href="aspnet_student_view.html">
+      <div class="card-glow"></div>
+      <div class="card-label">ASP.NET MVC</div>
+      <div class="card-title">ASP.NET<br>Final Project</div>
+      <div class="card-desc">Requirements, project titles with full claim system, group dashboard, and submission checklist.</div>
+      <div class="card-arrow">Open →</div>
+    </a>
+    <a class="card card-php" href="php_student_view.html">
+      <div class="card-glow"></div>
+      <div class="card-label">PHP + MySQL</div>
+      <div class="card-title">PHP + MySQL<br>Final Project</div>
+      <div class="card-desc">Requirements, project title options, checkpoints, and proposal checklist for your PHP project.</div>
+      <div class="card-arrow">Open →</div>
+    </a>
+  </div>
+
+  <div class="footer">Final Project Hub · contact your instructor for questions</div>
+</div>
 </body>
 </html>

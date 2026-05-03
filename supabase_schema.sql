@@ -214,7 +214,7 @@ begin
     v_section.id,
     v_code.id,
     v_group_name,
-    crypt(p_password, gen_salt('bf')),
+    extensions.crypt(p_password, extensions.gen_salt('bf')),
     p_project_title_id
   )
   returning * into v_group;
@@ -247,7 +247,7 @@ begin
   from public.groups g
   join public.claim_codes cc on cc.id = g.code_id
   where g.section_id = v_section.id and upper(cc.code) = upper(trim(p_code));
-  if not found or v_group.password_hash <> crypt(p_password, v_group.password_hash) then
+  if not found or v_group.password_hash <> extensions.crypt(p_password, v_group.password_hash) then
     raise exception 'Invalid group code or password';
   end if;
 
@@ -300,7 +300,7 @@ declare
   v_group public.groups%rowtype;
 begin
   select * into v_group from public.groups where id = p_group_id;
-  if not found or v_group.password_hash <> crypt(p_password, v_group.password_hash) then
+  if not found or v_group.password_hash <> extensions.crypt(p_password, v_group.password_hash) then
     raise exception 'Invalid dashboard session';
   end if;
 
@@ -340,7 +340,7 @@ declare
 begin
   select * into v_group from public.groups where id = p_group_id;
   if not found then raise exception 'Group not found'; end if;
-  if v_group.password_hash <> crypt(p_password, v_group.password_hash) then
+  if v_group.password_hash <> extensions.crypt(p_password, v_group.password_hash) then
     raise exception 'Invalid dashboard session';
   end if;
   select * into v_student from public.students where id = p_student_id;
@@ -371,7 +371,7 @@ declare
   v_group public.groups%rowtype;
 begin
   select * into v_group from public.groups where id = p_group_id;
-  if not found or v_group.password_hash <> crypt(p_password, v_group.password_hash) then
+  if not found or v_group.password_hash <> extensions.crypt(p_password, v_group.password_hash) then
     raise exception 'Invalid dashboard session';
   end if;
   delete from public.group_members where group_id = p_group_id and student_id = p_student_id;
@@ -391,7 +391,7 @@ declare
   v_group public.groups%rowtype;
 begin
   select * into v_group from public.groups where id = p_group_id;
-  if not found or v_group.password_hash <> crypt(p_password, v_group.password_hash) then
+  if not found or v_group.password_hash <> extensions.crypt(p_password, v_group.password_hash) then
     raise exception 'Invalid dashboard session';
   end if;
   insert into public.group_checklist (group_id, item_key, done, updated_at)
@@ -460,6 +460,7 @@ begin
       select jsonb_agg(jsonb_build_object(
         'id', g.id,
         'name', g.name,
+        'code', cc.code,
         'projectTitle', pt.name,
         'members', coalesce((
           select jsonb_agg(s.full_name order by s.full_name)
@@ -470,6 +471,7 @@ begin
       ) order by g.name)
       from public.groups g
       join public.project_titles pt on pt.id = g.project_title_id
+      join public.claim_codes cc on cc.id = g.code_id
       where g.section_id = p_section_id
     ), '[]'::jsonb)
   );

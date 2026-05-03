@@ -51,6 +51,18 @@ Student link format:
 aspnet_student_view.html?section=bsit-2a
 ```
 
+Group dashboard link format:
+
+```text
+group_dashboard.html?section=bsit-2a
+```
+
+You can also prefill the group code:
+
+```text
+group_dashboard.html?section=bsit-2a&code=F80B-F8FA
+```
+
 ## 5. Vercel Deploy
 
 Because this is static HTML/JS, you can deploy the folder directly.
@@ -61,7 +73,7 @@ Recommended:
 vercel
 ```
 
-Or connect the folder/repo in the Vercel dashboard. The public student page is `aspnet_student_view.html`; the teacher page is `aspnet_teacher_admin.html`.
+Or connect the folder/repo in the Vercel dashboard. The public student page is `aspnet_student_view.html`; the group workspace page is `group_dashboard.html`; the teacher page is `aspnet_teacher_admin.html`.
 
 ## Notes
 

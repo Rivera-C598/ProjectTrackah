@@ -145,6 +145,9 @@
         <strong>${esc(g.name)}</strong> <span class="pill ok">${esc(g.projectTitle)}</span>
         <div class="muted">${g.members.length}/6 members</div>
         <div>${g.members.map(esc).join(", ") || "No members"}</div>
+        <div style="margin-top:0.5rem;">
+          <a class="btn btn-small" href="group_dashboard.html?section=${encodeURIComponent(section?.slug || "")}&code=${encodeURIComponent(g.code || "")}">Dashboard Page</a>
+        </div>
       </div>`).join("") || '<div class="muted">No groups yet.</div>';
 
     document.getElementById("ungrouped-list").innerHTML = ungrouped.map(s => `
