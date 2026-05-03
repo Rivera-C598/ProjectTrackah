@@ -128,6 +128,16 @@
     setTimeout(() => { btn.textContent = orig; }, 1500);
   };
 
+  window.setGroupMaxMembers = async function (groupId, val) {
+    try {
+      await rpc("teacher_set_group_max_members", { p_group_id: groupId, p_max_members: parseInt(val) });
+      await loadSectionDetail();
+      render();
+    } catch (err) {
+      alert(err.message || "Could not update group limit.");
+    }
+  };
+
   window.deleteCode = async function (codeId) {
     try {
       await rpc("teacher_delete_code", { p_section_id: currentSectionId, p_code_id: codeId });
@@ -199,18 +209,28 @@
         ${!code.used ? `<button class="btn btn-danger btn-small" onclick="deleteCode('${code.id}')">Delete</button>` : ""}
       </div>`).join("") || '<div class="muted">No codes yet.</div>';
 
-    document.getElementById("groups-list").innerHTML = detail.groups.map(g => `
+    document.getElementById("groups-list").innerHTML = detail.groups.map(g => {
+      const opts = [4,5,6,7,8].map(n =>
+        `<option value="${n}" ${g.maxMembers === n ? "selected" : ""}>${n}</option>`
+      ).join("");
+      return `
       <div class="row" style="display:block;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;">
           <div><strong>${esc(g.name)}</strong> <span class="pill ok">${esc(g.projectTitle)}</span></div>
-          <button class="btn btn-danger btn-small" onclick="removeGroup('${g.id}', '${esc(g.name)}')">Remove</button>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <label style="font-size:11px;color:var(--muted);white-space:nowrap;">Max members:
+              <select style="width:auto;padding:3px 6px;font-size:12px;" onchange="setGroupMaxMembers('${g.id}', this.value)">${opts}</select>
+            </label>
+            <button class="btn btn-danger btn-small" onclick="removeGroup('${g.id}', '${esc(g.name)}')">Remove</button>
+          </div>
         </div>
-        <div class="muted">${g.members.length}/6 members</div>
+        <div class="muted">${g.members.length}/${g.maxMembers} members</div>
         <div>${g.members.map(esc).join(", ") || "No members"}</div>
         <div style="margin-top:0.5rem;">
           <a class="btn btn-small" href="group_dashboard.html?section=${encodeURIComponent(section?.slug || "")}&code=${encodeURIComponent(g.code || "")}">Dashboard Page</a>
         </div>
-      </div>`).join("") || '<div class="muted">No groups yet.</div>';
+      </div>`;
+    }).join("") || '<div class="muted">No groups yet.</div>';
 
     document.getElementById("ungrouped-list").innerHTML = ungrouped.map(s => `
       <div class="row"><span>${esc(s.fullName)}</span></div>`).join("") || '<div class="muted">No ungrouped students.</div>';

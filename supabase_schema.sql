@@ -57,10 +57,12 @@ create table if not exists public.groups (
   name text not null,
   password_hash text not null,
   project_title_id int not null references public.project_titles(id),
+  max_members int check (max_members between 1 and 12),
   created_at timestamptz not null default now(),
   unique (section_id, name),
   unique (section_id, project_title_id)
 );
+alter table public.groups add column if not exists max_members int check (max_members between 1 and 12);
 
 create table if not exists public.group_members (
   group_id uuid not null references public.groups(id) on delete cascade,
@@ -269,7 +271,8 @@ as $$
       'projectTitleId', g.project_title_id,
       'projectTitle', pt.name,
       'projectDescription', pt.description,
-      'projectFields', pt.fields
+      'projectFields', pt.fields,
+      'maxMembers', coalesce(g.max_members, sec.max_members)
     ),
     'members', coalesce((
       select jsonb_agg(jsonb_build_object('id', s.id, 'fullName', s.full_name) order by s.full_name)
@@ -285,6 +288,7 @@ as $$
   )
   from public.groups g
   join public.project_titles pt on pt.id = g.project_title_id
+  join public.sections sec on sec.id = g.section_id
   where g.id = p_group_id;
 $$;
 
@@ -350,7 +354,8 @@ begin
   if exists (select 1 from public.group_members where student_id = p_student_id) then
     raise exception 'Student already has a group';
   end if;
-  select max_members into v_max from public.sections where id = v_group.section_id;
+  select coalesce(v_group.max_members, s.max_members) into v_max
+  from public.sections s where s.id = v_group.section_id;
   select count(*) into v_count from public.group_members where group_id = p_group_id;
   if v_count >= v_max then raise exception 'Group is already full'; end if;
 
@@ -462,6 +467,7 @@ begin
         'name', g.name,
         'code', cc.code,
         'projectTitle', pt.name,
+        'maxMembers', coalesce(g.max_members, sec.max_members),
         'members', coalesce((
           select jsonb_agg(s.full_name order by s.full_name)
           from public.group_members gm
@@ -472,6 +478,7 @@ begin
       from public.groups g
       join public.project_titles pt on pt.id = g.project_title_id
       join public.claim_codes cc on cc.id = g.code_id
+      join public.sections sec on sec.id = g.section_id
       where g.section_id = p_section_id
     ), '[]'::jsonb)
   );
@@ -613,6 +620,23 @@ begin
   if not public.is_section_teacher(p_section_id) then raise exception 'Not allowed'; end if;
   delete from public.groups where section_id = p_section_id;
   update public.claim_codes set used_at = null where section_id = p_section_id;
+end;
+$$;
+
+drop function if exists public.teacher_set_group_max_members(uuid, int);
+create function public.teacher_set_group_max_members(p_group_id uuid, p_max_members int)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_section_id uuid;
+begin
+  select section_id into v_section_id from public.groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+  if not public.is_section_teacher(v_section_id) then raise exception 'Not allowed'; end if;
+  update public.groups set max_members = p_max_members where id = p_group_id;
 end;
 $$;
 

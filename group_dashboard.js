@@ -76,15 +76,28 @@
 
   function renderDashboard() {
     const group = dashboard.group;
+    const maxMem = group.maxMembers || bootstrap.section.maxMembers;
     document.getElementById("page-title").textContent = `${group.name} Dashboard`;
-    document.getElementById("page-meta").textContent = `${group.projectTitle} · ${dashboard.members.length}/${bootstrap.section.maxMembers} members`;
-    document.getElementById("member-count").textContent = dashboard.members.length;
+    document.getElementById("page-meta").textContent = `${group.projectTitle} · ${dashboard.members.length}/${maxMem} members`;
+    document.getElementById("member-count").textContent = `${dashboard.members.length}/${maxMem}`;
     document.getElementById("title-num").textContent = String(group.projectTitleId).padStart(2, "0");
-    renderMembers();
+
+    const fields = (group.projectFields || []);
+    document.getElementById("title-card").innerHTML = `
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px;">Project Title</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px;">${esc(group.projectTitle)}</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6;">${esc(group.projectDescription || "")}</div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:6px;">Suggested Fields</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${fields.map(f => `<span style="font-size:12px;padding:3px 10px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);color:var(--text);">${esc(f)}</span>`).join("")}
+      </div>`;
+
+    renderMembers(maxMem);
     renderGroupChecklist();
   }
 
-  function renderMembers() {
+  function renderMembers(maxMem) {
+    const max = maxMem || (dashboard.group.maxMembers || bootstrap.section.maxMembers);
     const box = document.getElementById("current-members");
     box.innerHTML = dashboard.members.map(m => `
       <div class="row">
@@ -103,7 +116,8 @@
     });
     document.getElementById("member-results").innerHTML = students.map(s => {
       const inGroup = dashboard.members.some(m => m.id === s.id);
-      const disabled = Boolean(s.assignedGroup) || inGroup || dashboard.members.length >= bootstrap.section.maxMembers;
+      const maxMem = dashboard.group.maxMembers || bootstrap.section.maxMembers;
+      const disabled = Boolean(s.assignedGroup) || inGroup || dashboard.members.length >= maxMem;
       const label = s.assignedGroup ? `In ${s.assignedGroup}` : inGroup ? "Added" : "Add";
       return `<div class="row ${disabled ? "disabled" : ""}">
         <span>${esc(s.fullName)}</span>
