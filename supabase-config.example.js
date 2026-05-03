@@ -1,5 +1,5 @@
 window.ASP_FINAL_PROJECT_CONFIG = {
-  supabaseUrl: "https://fkfxgpyepyhkmiygcfko.supabase.co",
-  supabaseAnonKey: "sb_publishable_lflpP74BQAlNu4PInAN10g_mfZ_0w7l",
+  supabaseUrl: "https://YOUR-PROJECT-REF.supabase.co",
+  supabaseAnonKey: "YOUR-SUPABASE-ANON-KEY",
   defaultSectionSlug: "bsit-2b"
 };
