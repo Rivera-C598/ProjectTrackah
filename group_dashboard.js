@@ -164,43 +164,9 @@
     }
   };
 
-  window.downloadProposalTemplate = function () {
+  window.downloadProposalTemplate = async function () {
     if (!dashboard) return;
-    const group = dashboard.group;
-    const content = [
-      "ASP.NET MVC Final Project Proposal",
-      "",
-      `Section: ${bootstrap.section.name}`,
-      `Group: ${group.name}`,
-      `Project Title: ${group.projectTitle}`,
-      `Members: ${dashboard.members.map(m => m.fullName).join(", ")}`,
-      "",
-      "1. Purpose of the Application:",
-      "",
-      "2. Target Users:",
-      "",
-      "3. Planned Database Table and Fields:",
-      group.projectFields.map(f => `- ${f}`).join("\n"),
-      "",
-      "4. CRUD Features:",
-      "- Create:",
-      "- Read:",
-      "- Update:",
-      "- Delete:",
-      "",
-      "5. Validation Rules:",
-      "",
-      "6. Member Roles:",
-      "",
-      "7. Checkpoint Notes:"
-    ].join("\n");
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${group.name.replace(/\s+/g, "_")}_proposal_template.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
+    await window.downloadProposalDocx(dashboard.group, bootstrap.section, dashboard.members);
   };
 
   async function init() {
