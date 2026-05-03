@@ -535,9 +535,16 @@ as $$
 declare
   i int;
   v_code text;
+  v_existing int;
+  v_max_groups int;
+  v_to_generate int;
 begin
   if not public.is_section_teacher(p_section_id) then raise exception 'Not allowed'; end if;
-  for i in 1..p_count loop
+  select max_groups into v_max_groups from public.sections where id = p_section_id;
+  select count(*) into v_existing from public.claim_codes where section_id = p_section_id;
+  v_to_generate := least(p_count, v_max_groups - v_existing);
+  if v_to_generate <= 0 then return; end if;
+  for i in 1..v_to_generate loop
     v_code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 4) || '-' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 4));
     insert into public.claim_codes (section_id, code)
     values (p_section_id, v_code)
