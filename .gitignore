@@ -1,5 +1,4 @@
-# Local Supabase browser config with real project URL/anon key.
-supabase-config.js
+
 
 # Local environment files.
 .env
