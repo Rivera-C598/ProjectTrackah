@@ -100,7 +100,10 @@
       </div>
 
       <div class="card">
-        <h2>Claim Codes</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+          <h2 style="margin-bottom:0;">Claim Codes</h2>
+          <button class="btn btn-small" id="copy-codes-btn" onclick="copyAllCodes()">Copy All Codes</button>
+        </div>
         <p style="margin-bottom:0.75rem;">Hand these codes to group leaders. Used codes are locked to their group. Unused codes can be deleted individually.</p>
         <div id="codes-list"></div>
       </div>

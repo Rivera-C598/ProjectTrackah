@@ -118,6 +118,16 @@
     }
   };
 
+  window.copyAllCodes = async function () {
+    const codes = detail.codes.map(c => c.code).join("\n");
+    if (!codes) { alert("No codes to copy."); return; }
+    await navigator.clipboard.writeText(codes);
+    const btn = document.getElementById("copy-codes-btn");
+    const orig = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  };
+
   window.deleteCode = async function (codeId) {
     try {
       await rpc("teacher_delete_code", { p_section_id: currentSectionId, p_code_id: codeId });
