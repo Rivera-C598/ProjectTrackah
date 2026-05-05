@@ -125,9 +125,15 @@
       const isOwner = identity && g.ownerStudentId === identity.studentId;
 
       const countClass = isFull ? "full" : "";
-      const titleHtml = g.projectTitle
-        ? `<div class="group-title set">${esc(g.projectTitle)}</div>`
-        : `<div class="group-title">Title TBA</div>`;
+      const titleHtml = isMyGroup && isOwner
+        ? `
+          <div style="display:grid;gap:0.5rem;">
+            <input type="text" id="iot-edit-name-${esc(g.id)}" value="${esc(g.name)}" placeholder="Group name">
+            <input type="text" id="iot-edit-title-${esc(g.id)}" value="${esc(g.projectTitle || "")}" placeholder="Project title">
+          </div>`
+        : (g.projectTitle
+          ? `<div class="group-title set">${esc(g.projectTitle)}</div>`
+          : `<div class="group-title">Title TBA</div>`);
 
       const membersHtml = (g.members && g.members.length > 0)
         ? g.members.map(m => {
@@ -156,6 +162,7 @@
       } else {
         joinBtn = `
           <span class="badge badge-green" style="font-size:11px;">Your Group</span>
+          ${isOwner ? `<button class="btn btn-sm" onclick="saveIotGroup('${esc(g.id)}')">Save Details</button>` : ""}
           <button class="btn btn-sm btn-outline" onclick="leaveIotGroup('${esc(g.id)}', '${esc(g.name)}')">Leave Group</button>`;
       }
 
@@ -494,6 +501,16 @@
     });
   }
 
+  async function updateIotGroup(groupId, actorStudentId, groupName, projectTitle, actorStudentIdNum) {
+    return await rpc("iot_update_group", {
+      p_group_id: groupId,
+      p_actor_student_id: actorStudentId,
+      p_group_name: groupName,
+      p_project_title: projectTitle || "",
+      p_actor_student_id_num: actorStudentIdNum || null
+    });
+  }
+
   // Expose for potential external use
   window.searchStudents = searchStudents;
   window.createGroup = createGroup;
@@ -554,6 +571,24 @@
       renderGroups();
     } catch (err) {
       alert(err.message || "Could not leave group.");
+    }
+  };
+
+  window.saveIotGroup = async function (groupId) {
+    const identity = getIdentity();
+    if (!identity) return;
+    const name = document.getElementById("iot-edit-name-" + groupId)?.value?.trim();
+    const title = document.getElementById("iot-edit-title-" + groupId)?.value?.trim() || "";
+    if (!name) {
+      alert("Group name is required.");
+      return;
+    }
+    try {
+      const updatedGroups = await updateIotGroup(groupId, identity.studentId, name, title, identity.studentIdNum);
+      bootstrapData.groups = updatedGroups;
+      renderGroups();
+    } catch (err) {
+      alert(err.message || "Could not update group details.");
     }
   };
   window.confirmIdentity = function (studentId, studentName, sectionId) {
