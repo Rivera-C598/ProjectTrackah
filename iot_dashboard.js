@@ -31,6 +31,11 @@
     sessionStorage.setItem(IDENTITY_KEY, JSON.stringify(identity));
   }
 
+  window.sanitizeIdentityIdInput = function (input) {
+    if (!input) return;
+    input.value = String(input.value || "").replace(/\D/g, "").slice(0, 7);
+  };
+
   function clearIdentity() {
     sessionStorage.removeItem(IDENTITY_KEY);
   }
@@ -250,9 +255,15 @@
       showError("identity-error", "Please select your name from the list first.");
       return;
     }
-    const idNum = document.getElementById("identity-id-input").value.trim();
+    const idInput = document.getElementById("identity-id-input");
+    window.sanitizeIdentityIdInput(idInput);
+    const idNum = idInput.value.trim();
     if (!idNum) {
       showError("identity-error", "Enter your student ID number.");
+      return;
+    }
+    if (!/^\d{7}$/.test(idNum)) {
+      showError("identity-error", "Student ID number must be exactly 7 digits.");
       return;
     }
 

@@ -482,7 +482,7 @@
 
     <div class="field" id="identity-id-field" style="display:none;">
       <label for="identity-id-input">Your student ID number</label>
-      <input type="text" id="identity-id-input" placeholder="e.g. 3230618" maxlength="10" autocomplete="off">
+      <input type="text" id="identity-id-input" placeholder="3200000" maxlength="7" inputmode="numeric" pattern="[0-9]{7}" autocomplete="off" oninput="sanitizeIdentityIdInput(this)">
     </div>
 
     <div class="inline-error" id="identity-error"></div>
