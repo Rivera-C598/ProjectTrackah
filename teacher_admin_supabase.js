@@ -7,6 +7,8 @@
   let sections = [];
   let currentSectionId = "";
   let detail = { students: [], codes: [], groups: [] };
+  const PAGE_SIZES = { groups: 4, ungrouped: 12, iot: 4 };
+  let pages = { groups: 1, ungrouped: 1, iot: 1 };
 
   function esc(value) {
     return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -25,6 +27,42 @@
     if (error) throw error;
     return data;
   }
+
+  function clampPage(kind, totalItems) {
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZES[kind]));
+    pages[kind] = Math.min(Math.max(1, pages[kind]), totalPages);
+    return totalPages;
+  }
+
+  function pageSlice(items, kind) {
+    const totalPages = clampPage(kind, items.length);
+    const start = (pages[kind] - 1) * PAGE_SIZES[kind];
+    return {
+      items: items.slice(start, start + PAGE_SIZES[kind]),
+      totalPages,
+      start: items.length ? start + 1 : 0,
+      end: Math.min(start + PAGE_SIZES[kind], items.length)
+    };
+  }
+
+  function pagerHtml(kind, totalItems, start, end, totalPages) {
+    if (totalItems <= PAGE_SIZES[kind]) return "";
+    return `
+      <div class="pager">
+        <div class="pager-meta">Showing ${start}-${end} of ${totalItems}</div>
+        <div class="pager-actions">
+          <button class="btn btn-small" ${pages[kind] <= 1 ? "disabled" : ""} onclick="changePage('${kind}', -1)">Prev</button>
+          <span class="pager-meta">Page ${pages[kind]} / ${totalPages}</span>
+          <button class="btn btn-small" ${pages[kind] >= totalPages ? "disabled" : ""} onclick="changePage('${kind}', 1)">Next</button>
+        </div>
+      </div>`;
+  }
+
+  window.changePage = function (kind, delta) {
+    pages[kind] = Math.max(1, pages[kind] + delta);
+    render();
+    if (kind === "iot") renderIotGroups(iotGroups);
+  };
 
   window.openAdmin = async function () {
     try {
@@ -52,6 +90,7 @@
 
   window.selectSection = async function (sectionId) {
     currentSectionId = sectionId;
+    pages = { groups: 1, ungrouped: 1, iot: 1 };
     await loadSectionDetail();
     render();
   };
@@ -238,12 +277,24 @@
       container.innerHTML = '<div class="muted">No IoT groups yet for this section.</div>';
       return;
     }
-    container.innerHTML = groups.map(g => {
+    const paged = pageSlice(groups, "iot");
+    container.innerHTML = paged.items.map(g => {
+      const moveOptions = groups
+        .filter(target => target.id !== g.id)
+        .map(target => `<option value="${target.id}">${esc(target.name)}</option>`)
+        .join("");
       const memberRows = (g.members && g.members.length > 0)
         ? g.members.map(m => `
             <div class="row" style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
               <span style="font-size:13px;">${esc(m.fullName)}</span>
-              <button class="btn btn-danger btn-small" onclick="removeIotMember('${esc(g.id)}', '${esc(m.id)}', '${esc(m.fullName)}')">Remove</button>
+              <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+                <select id="iot-move-${esc(m.id)}" style="width:auto;padding:3px 6px;font-size:12px;">
+                  <option value="">Move to...</option>
+                  ${moveOptions}
+                </select>
+                <button class="btn btn-small" ${moveOptions ? "" : "disabled"} onclick="moveIotMember('${esc(m.id)}')">Move</button>
+                <button class="btn btn-danger btn-small" onclick="removeIotMember('${esc(g.id)}', '${esc(m.id)}', '${esc(m.fullName)}')">Remove</button>
+              </div>
             </div>`).join("")
         : '<div class="muted" style="font-size:13px;">No members</div>';
 
@@ -262,7 +313,7 @@
         <div class="muted" style="font-size:12px;margin-bottom:0.5rem;">${g.memberCount || 0} / 5 members</div>
         ${memberRows}
       </div>`;
-    }).join("");
+    }).join("") + pagerHtml("iot", groups.length, paged.start, paged.end, paged.totalPages);
   }
 
   window.removeIotGroup = async function (groupId, groupName) {
@@ -301,6 +352,24 @@
     }
   };
 
+  window.moveIotMember = async function (studentId) {
+    const select = document.getElementById("iot-move-" + studentId);
+    const targetGroupId = select?.value;
+    if (!targetGroupId) {
+      alert("Choose a target IoT group first.");
+      return;
+    }
+    try {
+      iotGroups = await rpc("teacher_iot_move_member", {
+        p_student_id: studentId,
+        p_target_group_id: targetGroupId
+      });
+      renderIotGroups(iotGroups);
+    } catch (err) {
+      alert(err.message || "Could not move member.");
+    }
+  };
+
   function render() {
     const section = sections.find(s => s.id === currentSectionId);
     document.getElementById("section-name").value = section?.name || "";
@@ -320,7 +389,8 @@
         ${!code.used ? `<button class="btn btn-danger btn-small" onclick="deleteCode('${code.id}')">Delete</button>` : ""}
       </div>`).join("") || '<div class="muted">No codes yet.</div>';
 
-    document.getElementById("groups-list").innerHTML = detail.groups.map(g => {
+    const pagedGroups = pageSlice(detail.groups, "groups");
+    document.getElementById("groups-list").innerHTML = pagedGroups.items.map(g => {
       const opts = [4,5,6,7,8].map(n =>
         `<option value="${n}" ${g.maxMembers === n ? "selected" : ""}>${n}</option>`
       ).join("");
@@ -342,8 +412,15 @@
         </div>
       </div>`;
     }).join("") || '<div class="muted">No groups yet.</div>';
+    if (detail.groups.length) {
+      document.getElementById("groups-list").innerHTML += pagerHtml("groups", detail.groups.length, pagedGroups.start, pagedGroups.end, pagedGroups.totalPages);
+    }
 
-    document.getElementById("ungrouped-list").innerHTML = ungrouped.map(s => `
+    const pagedUngrouped = pageSlice(ungrouped, "ungrouped");
+    document.getElementById("ungrouped-list").innerHTML = pagedUngrouped.items.map(s => `
       <div class="row"><span>${esc(s.fullName)}</span></div>`).join("") || '<div class="muted">No ungrouped students.</div>';
+    if (ungrouped.length) {
+      document.getElementById("ungrouped-list").innerHTML += pagerHtml("ungrouped", ungrouped.length, pagedUngrouped.start, pagedUngrouped.end, pagedUngrouped.totalPages);
+    }
   }
 })();
