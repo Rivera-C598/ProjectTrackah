@@ -723,16 +723,20 @@ create table if not exists public.iot_groups (
   section_id uuid not null references public.sections(id) on delete cascade,
   name text not null,
   project_title text not null default '',
+  owner_student_id uuid references public.students(id) on delete set null,
   created_at timestamptz not null default now(),
   unique (section_id, name)
 );
+alter table public.iot_groups add column if not exists owner_student_id uuid references public.students(id) on delete set null;
 
 create table if not exists public.iot_group_members (
   group_id uuid not null references public.iot_groups(id) on delete cascade,
   student_id uuid not null references public.students(id) on delete cascade,
+  created_at timestamptz not null default now(),
   primary key (group_id, student_id),
   unique (student_id)
 );
+alter table public.iot_group_members add column if not exists created_at timestamptz not null default now();
 
 alter table public.iot_groups enable row level security;
 alter table public.iot_group_members enable row level security;
@@ -768,6 +772,7 @@ as $$
       'id', ig.id,
       'name', ig.name,
       'projectTitle', ig.project_title,
+      'ownerStudentId', ig.owner_student_id,
       'memberCount', coalesce(mc.cnt, 0),
       'members', coalesce(ml.members, '[]'::jsonb)
     ) order by ig.created_at
@@ -889,8 +894,8 @@ begin
     raise exception 'Group name is required';
   end if;
 
-  insert into public.iot_groups (section_id, name, project_title)
-  values (p_section_id, trim(p_group_name), coalesce(trim(p_project_title), ''))
+  insert into public.iot_groups (section_id, name, project_title, owner_student_id)
+  values (p_section_id, trim(p_group_name), coalesce(trim(p_project_title), ''), p_student_id)
   returning id into v_group_id;
 
   insert into public.iot_group_members (group_id, student_id) values (v_group_id, p_student_id);
@@ -976,6 +981,119 @@ begin
   end if;
 
   update public.iot_groups set project_title = coalesce(trim(p_project_title), '') where id = p_group_id;
+
+  return public._iot_groups_for_section(v_group.section_id);
+end;
+$$;
+
+drop function if exists public.iot_add_member(uuid, uuid, uuid, text);
+create function public.iot_add_member(
+  p_group_id uuid,
+  p_actor_student_id uuid,
+  p_target_student_id uuid,
+  p_actor_student_id_num text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.iot_groups%rowtype;
+  v_count int;
+begin
+  select * into v_group from public.iot_groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+
+  if v_group.owner_student_id is distinct from p_actor_student_id then
+    raise exception 'Only the group creator can add members';
+  end if;
+
+  if p_actor_student_id_num is not null and exists (
+    select 1 from public.students where id = p_actor_student_id and student_id_num is not null
+  ) then
+    if not public.iot_verify_student_id(p_actor_student_id, p_actor_student_id_num) then
+      raise exception 'Student ID number does not match. Please check your ID and try again.';
+    end if;
+  end if;
+
+  if not exists (
+    select 1 from public.students where id = p_target_student_id and section_id = v_group.section_id
+  ) then
+    raise exception 'Student is not in this section';
+  end if;
+
+  if exists (
+    select 1 from public.iot_group_members igm
+    join public.iot_groups ig on ig.id = igm.group_id
+    where igm.student_id = p_target_student_id and ig.section_id = v_group.section_id
+  ) then
+    raise exception 'Student is already in a group';
+  end if;
+
+  select count(*) into v_count from public.iot_group_members where group_id = p_group_id;
+  if v_count >= 5 then raise exception 'Group is already full'; end if;
+
+  insert into public.iot_group_members (group_id, student_id) values (p_group_id, p_target_student_id);
+  return public._iot_groups_for_section(v_group.section_id);
+end;
+$$;
+
+drop function if exists public.iot_remove_member(uuid, uuid, uuid, text);
+create function public.iot_remove_member(
+  p_group_id uuid,
+  p_actor_student_id uuid,
+  p_target_student_id uuid,
+  p_actor_student_id_num text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.iot_groups%rowtype;
+  v_next_owner uuid;
+begin
+  select * into v_group from public.iot_groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+
+  if p_actor_student_id_num is not null and exists (
+    select 1 from public.students where id = p_actor_student_id and student_id_num is not null
+  ) then
+    if not public.iot_verify_student_id(p_actor_student_id, p_actor_student_id_num) then
+      raise exception 'Student ID number does not match. Please check your ID and try again.';
+    end if;
+  end if;
+
+  if not exists (
+    select 1 from public.iot_group_members where group_id = p_group_id and student_id = p_target_student_id
+  ) then
+    raise exception 'Student is not in this group';
+  end if;
+
+  if p_actor_student_id <> p_target_student_id and v_group.owner_student_id is distinct from p_actor_student_id then
+    raise exception 'Only the group creator can remove other members';
+  end if;
+
+  delete from public.iot_group_members where group_id = p_group_id and student_id = p_target_student_id;
+
+  if v_group.owner_student_id = p_target_student_id then
+    select igm.student_id into v_next_owner
+    from public.iot_group_members igm
+    where igm.group_id = p_group_id
+    order by igm.created_at, igm.student_id
+    limit 1;
+
+    if v_next_owner is null then
+      delete from public.iot_groups where id = p_group_id;
+      return public._iot_groups_for_section(v_group.section_id);
+    end if;
+
+    update public.iot_groups
+    set owner_student_id = v_next_owner
+    where id = p_group_id;
+  end if;
 
   return public._iot_groups_for_section(v_group.section_id);
 end;

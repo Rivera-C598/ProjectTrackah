@@ -12,6 +12,7 @@
   let bootstrapData = null;     // { section, groups }
   let pendingAction = null;     // { type: "add" | "join", groupId?, groupName? }
   let selectedStudent = null;   // { studentId, studentName, sectionId } — chosen in identity modal
+  let groupSearchResults = {};
 
   // ----------------------------------------------------------------
   // Utilities
@@ -95,10 +96,12 @@
 
     // Determine if current identity is already in a group
     let myGroupId = null;
+    let myGroup = null;
     if (identity) {
       for (const g of groups) {
         if ((g.members || []).some(m => m.id === identity.studentId)) {
           myGroupId = g.id;
+          myGroup = g;
           break;
         }
       }
@@ -119,6 +122,7 @@
       const isFull = count >= MAX_MEMBERS;
       const isMyGroup = myGroupId === g.id;
       const alreadyInAGroup = myGroupId !== null;
+      const isOwner = identity && g.ownerStudentId === identity.studentId;
 
       const countClass = isFull ? "full" : "";
       const titleHtml = g.projectTitle
@@ -126,7 +130,18 @@
         : `<div class="group-title">Title TBA</div>`;
 
       const membersHtml = (g.members && g.members.length > 0)
-        ? g.members.map(m => `<span class="member-pill">${esc(m.fullName)}</span>`).join("")
+        ? g.members.map(m => {
+            const isMe = identity && m.id === identity.studentId;
+            const canRemove = isOwner || isMe;
+            const removeLabel = isMe ? "Leave" : "Remove";
+            return `
+              <div class="row" style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);">
+                <span class="member-pill" style="display:inline-flex;align-items:center;gap:6px;">
+                  ${esc(m.fullName)}${g.ownerStudentId === m.id ? ' <strong style="font-size:10px;color:var(--accent);">OWNER</strong>' : ''}
+                </span>
+                ${isMyGroup && canRemove ? `<button class="btn btn-sm btn-outline" onclick="removeIotMember('${esc(g.id)}', '${esc(m.id)}', '${esc(m.fullName)}')">${removeLabel}</button>` : ""}
+              </div>`;
+          }).join("")
         : `<span style="font-size:12px;color:var(--muted);">No members yet</span>`;
 
       let joinBtn = "";
@@ -139,8 +154,30 @@
           joinBtn = `<button class="btn btn-sm" onclick="openJoinModal('${esc(g.id)}', '${esc(g.name)}')">Join</button>`;
         }
       } else {
-        joinBtn = `<span class="badge badge-green" style="font-size:11px;">Your Group</span>`;
+        joinBtn = `
+          <span class="badge badge-green" style="font-size:11px;">Your Group</span>
+          <button class="btn btn-sm btn-outline" onclick="leaveIotGroup('${esc(g.id)}', '${esc(g.name)}')">Leave Group</button>`;
       }
+
+      const searchResults = (groupSearchResults[g.id] || []).map(r => {
+        const inThisGroup = (g.members || []).some(m => m.id === r.id);
+        const disabled = Boolean(r.assignedGroup) || inThisGroup || isFull;
+        const label = r.assignedGroup ? `In ${r.assignedGroup}` : inThisGroup ? "Added" : "Add";
+        return `
+          <div class="search-option">
+            <span>${esc(r.fullName)}</span>
+            <button class="btn btn-sm" ${disabled ? "disabled" : ""} onclick="addIotMember('${esc(g.id)}', '${esc(r.id)}')">${esc(label)}</button>
+          </div>`;
+      }).join("");
+
+      const ownerTools = isMyGroup && isOwner ? `
+        <div style="margin-top:0.25rem;">
+          <div class="field" style="margin-bottom:0.5rem;">
+            <label for="group-search-${esc(g.id)}">Add members</label>
+            <input type="text" id="group-search-${esc(g.id)}" placeholder="Search the section roster" oninput="searchIotMembers('${esc(g.id)}', this.value)">
+          </div>
+          <div class="search-dropdown">${searchResults || '<div class="search-no-results">Search for a student to add.</div>'}</div>
+        </div>` : "";
 
       return `
       <div class="group-card">
@@ -151,6 +188,7 @@
         ${titleHtml}
         <div class="member-pills">${membersHtml}</div>
         <div class="group-actions">${joinBtn}</div>
+        ${ownerTools}
       </div>`;
     }).join("");
 
@@ -438,10 +476,86 @@
     });
   }
 
+  async function addMemberToGroup(groupId, actorStudentId, targetStudentId, actorStudentIdNum) {
+    return await rpc("iot_add_member", {
+      p_group_id: groupId,
+      p_actor_student_id: actorStudentId,
+      p_target_student_id: targetStudentId,
+      p_actor_student_id_num: actorStudentIdNum || null
+    });
+  }
+
+  async function removeMemberFromGroup(groupId, actorStudentId, targetStudentId, actorStudentIdNum) {
+    return await rpc("iot_remove_member", {
+      p_group_id: groupId,
+      p_actor_student_id: actorStudentId,
+      p_target_student_id: targetStudentId,
+      p_actor_student_id_num: actorStudentIdNum || null
+    });
+  }
+
   // Expose for potential external use
   window.searchStudents = searchStudents;
   window.createGroup = createGroup;
   window.joinGroup = joinGroup;
+  window.searchIotMembers = async function (groupId, query) {
+    if (!bootstrapData || !bootstrapData.section?.id) return;
+    try {
+      groupSearchResults[groupId] = await searchStudents(bootstrapData.section.id, query.trim());
+      renderGroups();
+      const field = document.getElementById("group-search-" + groupId);
+      if (field) {
+        field.value = query;
+        field.focus();
+      }
+    } catch (err) {
+      alert(err.message || "Could not search students.");
+    }
+  };
+
+  window.addIotMember = async function (groupId, targetStudentId) {
+    const identity = getIdentity();
+    if (!identity) return;
+    try {
+      const updatedGroups = await addMemberToGroup(groupId, identity.studentId, targetStudentId, identity.studentIdNum);
+      bootstrapData.groups = updatedGroups;
+      groupSearchResults[groupId] = [];
+      renderGroups();
+    } catch (err) {
+      alert(err.message || "Could not add member.");
+    }
+  };
+
+  window.removeIotMember = async function (groupId, targetStudentId, studentName) {
+    const identity = getIdentity();
+    if (!identity) return;
+    const isSelf = identity.studentId === targetStudentId;
+    if (!confirm(isSelf ? `Leave "${studentName}" from this group?` : `Remove "${studentName}" from this group?`)) return;
+    try {
+      const updatedGroups = await removeMemberFromGroup(groupId, identity.studentId, targetStudentId, identity.studentIdNum);
+      bootstrapData.groups = updatedGroups;
+      if (isSelf) {
+        renderGroups();
+        return;
+      }
+      renderGroups();
+    } catch (err) {
+      alert(err.message || "Could not remove member.");
+    }
+  };
+
+  window.leaveIotGroup = async function (groupId, groupName) {
+    const identity = getIdentity();
+    if (!identity) return;
+    if (!confirm(`Leave "${groupName}"? You can join another group afterward.`)) return;
+    try {
+      const updatedGroups = await removeMemberFromGroup(groupId, identity.studentId, identity.studentId, identity.studentIdNum);
+      bootstrapData.groups = updatedGroups;
+      renderGroups();
+    } catch (err) {
+      alert(err.message || "Could not leave group.");
+    }
+  };
   window.confirmIdentity = function (studentId, studentName, sectionId) {
     setIdentity({ studentId, studentName, sectionId });
     renderIdentityState();
