@@ -14,6 +14,7 @@
   let selectedStudent = null;   // { studentId, studentName, sectionId } — chosen in identity modal
   let groupSearchResults = {};
   let groupStatusMessages = {};
+  let groupStatusTimers = {};
 
   // ----------------------------------------------------------------
   // Utilities
@@ -66,7 +67,18 @@
 
   function setGroupStatus(groupId, message, kind) {
     if (!groupId) return;
+    if (groupStatusTimers[groupId]) {
+      clearTimeout(groupStatusTimers[groupId]);
+      delete groupStatusTimers[groupId];
+    }
     groupStatusMessages[groupId] = message ? { message, kind: kind || "info" } : null;
+    if (message) {
+      groupStatusTimers[groupId] = setTimeout(() => {
+        groupStatusMessages[groupId] = null;
+        delete groupStatusTimers[groupId];
+        renderGroups();
+      }, kind === "error" ? 5000 : 2500);
+    }
   }
 
   // ----------------------------------------------------------------
