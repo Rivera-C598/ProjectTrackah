@@ -192,6 +192,19 @@
     padding: 2px 9px; border-radius: 20px;
   }
   .group-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.25rem; }
+  .group-edit-fields { display: grid; gap: 0.5rem; }
+  .group-edit-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 10px 12px; font-size: 14px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .group-edit-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(16,185,129,0.12); }
+  .group-edit-input::placeholder { color: var(--muted); }
+  .group-inline-status {
+    font-size: 12px; color: var(--muted); min-height: 18px; margin-top: -0.15rem;
+  }
+  .group-inline-status.error { color: var(--red); }
+  .group-inline-status.success { color: var(--accent2); }
 
   /* Empty state */
   .groups-empty {

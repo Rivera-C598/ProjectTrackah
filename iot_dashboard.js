@@ -13,6 +13,7 @@
   let pendingAction = null;     // { type: "add" | "join", groupId?, groupName? }
   let selectedStudent = null;   // { studentId, studentName, sectionId } — chosen in identity modal
   let groupSearchResults = {};
+  let groupStatusMessages = {};
 
   // ----------------------------------------------------------------
   // Utilities
@@ -61,6 +62,11 @@
     const { data, error } = await client.rpc(name, args || {});
     if (error) throw error;
     return data;
+  }
+
+  function setGroupStatus(groupId, message, kind) {
+    if (!groupId) return;
+    groupStatusMessages[groupId] = message ? { message, kind: kind || "info" } : null;
   }
 
   // ----------------------------------------------------------------
@@ -127,9 +133,9 @@
       const countClass = isFull ? "full" : "";
       const titleHtml = isMyGroup && isOwner
         ? `
-          <div style="display:grid;gap:0.5rem;">
-            <input type="text" id="iot-edit-name-${esc(g.id)}" value="${esc(g.name)}" placeholder="Group name">
-            <input type="text" id="iot-edit-title-${esc(g.id)}" value="${esc(g.projectTitle || "")}" placeholder="Project title">
+          <div class="group-edit-fields">
+            <input class="group-edit-input" type="text" id="iot-edit-name-${esc(g.id)}" value="${esc(g.name)}" placeholder="Group name">
+            <input class="group-edit-input" type="text" id="iot-edit-title-${esc(g.id)}" value="${esc(g.projectTitle || "")}" placeholder="Project title">
           </div>`
         : (g.projectTitle
           ? `<div class="group-title set">${esc(g.projectTitle)}</div>`
@@ -179,6 +185,7 @@
 
       const ownerTools = isMyGroup && isOwner ? `
         <div style="margin-top:0.25rem;">
+          <div class="group-inline-status ${groupStatusMessages[g.id]?.kind === "error" ? "error" : groupStatusMessages[g.id]?.kind === "success" ? "success" : ""}">${esc(groupStatusMessages[g.id]?.message || "")}</div>
           <div class="field" style="margin-bottom:0.5rem;">
             <label for="group-search-${esc(g.id)}">Add members</label>
             <input type="text" id="group-search-${esc(g.id)}" placeholder="Search the section roster" oninput="searchIotMembers('${esc(g.id)}', this.value)">
@@ -537,9 +544,11 @@
       const updatedGroups = await addMemberToGroup(groupId, identity.studentId, targetStudentId, identity.studentIdNum);
       bootstrapData.groups = updatedGroups;
       groupSearchResults[groupId] = [];
+      setGroupStatus(groupId, "Member added.", "success");
       renderGroups();
     } catch (err) {
-      alert(err.message || "Could not add member.");
+      setGroupStatus(groupId, err.message || "Could not add member.", "error");
+      renderGroups();
     }
   };
 
@@ -555,9 +564,11 @@
         renderGroups();
         return;
       }
+      setGroupStatus(groupId, isSelf ? "You left the group." : "Member removed.", "success");
       renderGroups();
     } catch (err) {
-      alert(err.message || "Could not remove member.");
+      setGroupStatus(groupId, err.message || "Could not remove member.", "error");
+      renderGroups();
     }
   };
 
@@ -580,15 +591,18 @@
     const name = document.getElementById("iot-edit-name-" + groupId)?.value?.trim();
     const title = document.getElementById("iot-edit-title-" + groupId)?.value?.trim() || "";
     if (!name) {
-      alert("Group name is required.");
+      setGroupStatus(groupId, "Group name is required.", "error");
+      renderGroups();
       return;
     }
     try {
       const updatedGroups = await updateIotGroup(groupId, identity.studentId, name, title, identity.studentIdNum);
       bootstrapData.groups = updatedGroups;
+      setGroupStatus(groupId, "Group details saved.", "success");
       renderGroups();
     } catch (err) {
-      alert(err.message || "Could not update group details.");
+      setGroupStatus(groupId, err.message || "Could not update group details.", "error");
+      renderGroups();
     }
   };
   window.confirmIdentity = function (studentId, studentName, sectionId) {

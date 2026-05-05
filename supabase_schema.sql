@@ -986,52 +986,6 @@ begin
 end;
 $$;
 
-drop function if exists public.iot_update_group(uuid, uuid, text, text, text);
-create function public.iot_update_group(
-  p_group_id uuid,
-  p_actor_student_id uuid,
-  p_group_name text,
-  p_project_title text,
-  p_actor_student_id_num text default null
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_group public.iot_groups%rowtype;
-  v_name text;
-begin
-  select * into v_group from public.iot_groups where id = p_group_id;
-  if not found then raise exception 'Group not found'; end if;
-
-  if v_group.owner_student_id is distinct from p_actor_student_id then
-    raise exception 'Only the group creator can edit group details';
-  end if;
-
-  if p_actor_student_id_num is not null and exists (
-    select 1 from public.students where id = p_actor_student_id and student_id_num is not null
-  ) then
-    if not public.iot_verify_student_id(p_actor_student_id, p_actor_student_id_num) then
-      raise exception 'Student ID number does not match. Please check your ID and try again.';
-    end if;
-  end if;
-
-  v_name := trim(coalesce(p_group_name, ''));
-  if v_name = '' then
-    raise exception 'Group name is required';
-  end if;
-
-  update public.iot_groups
-  set name = v_name,
-      project_title = coalesce(trim(p_project_title), '')
-  where id = p_group_id;
-
-  return public._iot_groups_for_section(v_group.section_id);
-end;
-$$;
-
 drop function if exists public.iot_add_member(uuid, uuid, uuid, text);
 create function public.iot_add_member(
   p_group_id uuid,
