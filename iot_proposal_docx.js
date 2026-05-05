@@ -193,6 +193,8 @@ window.downloadIotDocx = async function (group, section) {
         sectionHeading("3. Components Used"),
         componentsTable,
 
+
+
         // 4. Circuit Description
         sectionHeading("4. Circuit Description"),
         subHeading("4.1 Wiring Overview"),
@@ -202,72 +204,18 @@ window.downloadIotDocx = async function (group, section) {
         bodyText("Paste a screenshot of your completed Tinkercad circuit below:"),
         ...blankLines(8),
 
-        // 5. System Logic
-        sectionHeading("5. System Logic"),
-        bodyText("Describe the input-to-output flow of your system:"),
-        logicTable,
-        new Paragraph({ children: [run("")], spacing: { after: 120 } }),
-        subHeading("5.1 Decision-Making Logic"),
-        ph("[Explain the if/else or loop logic in your code. What conditions trigger which actions?]"),
-        ...blankLines(4),
-
-        // 6. Arduino Code
-        sectionHeading("6. Arduino Code Overview"),
-        subHeading("6.1 Setup Function"),
-        ph("[Describe what your setup() function does. What is initialized?]"),
-        ...blankLines(3),
-        subHeading("6.2 Loop Function"),
-        ph("[Describe what your loop() function does step by step.]"),
-        ...blankLines(3),
-        subHeading("6.3 Key Functions / Logic"),
-        ph("[Describe any custom functions or important logic blocks in your code.]"),
-        ...blankLines(3),
-        bodyText("Attach the full .ino code file separately or paste it below:"),
-        ...blankLines(6),
-
-        // 7. Simulation
-        sectionHeading("7. Simulation Results"),
-        bodyText("Paste a screenshot of your simulation running (components active, code executing):"),
-        ...blankLines(8),
-        subHeading("7.1 Observed Behavior"),
-        ph("[Describe what happens during the simulation. Does it behave as expected?]"),
-        ...blankLines(3),
-
         // 8. Bonus Component (if any)
-        sectionHeading("8. Bonus Component (if applicable)"),
-        subHeading("8.1 Component Name"),
+        sectionHeading("5. Bonus Component (if applicable)"),
+        subHeading("5.1 Component Name"),
         ph("[Name of the bonus component not covered in class]"),
-        subHeading("8.2 How It Works"),
+        subHeading("5.2 How It Works"),
         ph("[Explain how this component works and how you integrated it into your system.]"),
         ...blankLines(3),
 
-        // 9. Challenges
-        sectionHeading("9. Challenges & Solutions"),
-        makeTable(
-          ["Challenge Encountered", "How the Group Resolved It"],
-          [
-            ["[Challenge 1]", "[Solution 1]"],
-            ["[Challenge 2]", "[Solution 2]"],
-            ["[Challenge 3]", "[Solution 3]"]
-          ]
-        ),
-
         // 10. Member Contributions
-        sectionHeading("10. Member Contributions"),
+        sectionHeading("6. Member Contributions"),
         contributionsTable,
 
-        // 11. Submission Checklist
-        sectionHeading("11. Submission Checklist"),
-        makeTable(
-          ["Item", "Submitted?"],
-          [
-            ["Tinkercad share link (public)", "[ ] Yes  [ ] No"],
-            ["Screenshot of completed circuit", "[ ] Yes  [ ] No"],
-            ["Screenshot of simulation running", "[ ] Yes  [ ] No"],
-            ["Arduino code file (.ino)", "[ ] Yes  [ ] No"],
-            ["This documentation file (.docx)", "[ ] Yes  [ ] No"]
-          ]
-        ),
         new Paragraph({ children: [run("")], spacing: { after: 160 } }),
         new Paragraph({
           children: [run("Tinkercad Circuit Name Format: ", { bold: true }), run(`Group [Number] - Final Project - ${projectTitle}`)],
