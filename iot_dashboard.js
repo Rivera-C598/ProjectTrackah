@@ -31,6 +31,18 @@
     sessionStorage.setItem(IDENTITY_KEY, JSON.stringify(identity));
   }
 
+  function clearIdentity() {
+    sessionStorage.removeItem(IDENTITY_KEY);
+  }
+
+  function renderIdentityState() {
+    const exitBtn = document.getElementById("exit-student-mode-btn");
+    if (!exitBtn) return;
+    const identity = getIdentity();
+    exitBtn.style.display = identity ? "inline-flex" : "none";
+    exitBtn.textContent = identity ? `Exit Student Mode (${identity.studentName})` : "Exit Student Mode";
+  }
+
   function showError(id, msg) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -169,6 +181,15 @@
 
   window.closeIdentityModal = closeIdentityModal;
 
+  window.exitStudentMode = function () {
+    clearIdentity();
+    closeIdentityModal();
+    window.closeAddGroupModal();
+    window.closeJoinModal();
+    renderIdentityState();
+    renderGroups();
+  };
+
   window.onIdentitySearch = function (query) {
     clearTimeout(identitySearchTimeout);
     const dropdown = document.getElementById("identity-dropdown");
@@ -266,6 +287,7 @@
     };
     setIdentity(identity);
     closeIdentityModal();
+    renderIdentityState();
     renderGroups();
     if (typeof pendingAction === "function") pendingAction(identity);
   };
@@ -411,6 +433,7 @@
   window.joinGroup = joinGroup;
   window.confirmIdentity = function (studentId, studentName, sectionId) {
     setIdentity({ studentId, studentName, sectionId });
+    renderIdentityState();
     renderGroups();
   };
 
@@ -437,5 +460,6 @@
   // ----------------------------------------------------------------
   // Init
   // ----------------------------------------------------------------
+  renderIdentityState();
   loadBootstrap();
 })();
