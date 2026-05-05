@@ -415,6 +415,26 @@
   };
 
   // ----------------------------------------------------------------
+  // Documentation download
+  // ----------------------------------------------------------------
+  window.downloadIotTemplate = async function () {
+    const identity = getIdentity();
+    let group = null;
+    let section = bootstrapData ? bootstrapData.section : null;
+
+    if (identity && bootstrapData) {
+      for (const g of bootstrapData.groups || []) {
+        if ((g.members || []).some(m => m.id === identity.studentId)) {
+          group = g;
+          break;
+        }
+      }
+    }
+
+    await window.downloadIotDocx(group, section);
+  };
+
+  // ----------------------------------------------------------------
   // Init
   // ----------------------------------------------------------------
   loadBootstrap();

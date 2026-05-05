@@ -443,11 +443,14 @@
       <p style="font-size:14px;color:var(--muted);margin-bottom:1.25rem;">
         Download and use the official documentation template. Fill in all fields before your presentation.
       </p>
-      <a class="download-btn" href="#" onclick="alert('Documentation template coming soon. Check back later.');return false;">
-        ↓ Download Documentation Template (.docx)
-      </a>
+      <button class="download-btn" onclick="downloadIotTemplate()">
+        &#8595; Download Documentation Template (.docx)
+      </button>
       <div class="note" style="margin-top:1rem;">
-        <strong>Note:</strong> Incomplete or missing documentation will significantly affect your grade. Do not leave any section blank.
+        Template pre-fills your group name, project title, section, and member names if you are identified. Otherwise a blank template is generated.
+      </div>
+      <div class="note" style="margin-top:0.5rem;">
+        <strong>Reminder:</strong> Incomplete or missing documentation will significantly affect your grade. Do not leave any section blank.
       </div>
     </div>
   </div>
@@ -531,6 +534,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+<script src="iot_proposal_docx.js"></script>
 <script src="supabase-config.js"></script>
 <script src="iot_dashboard.js"></script>
 </body>
