@@ -30,6 +30,32 @@
     document.getElementById("login-status").textContent = message || "";
   }
 
+  function isAspFinalized() {
+    return Boolean(bootstrap?.section?.aspFinalized || dashboard?.group?.aspFinalized);
+  }
+
+  function renderFinalizedNotice() {
+    let notice = document.getElementById("asp-finalized-notice");
+    if (!notice) {
+      notice = document.createElement("div");
+      notice.id = "asp-finalized-notice";
+      notice.className = "card";
+      notice.style.borderColor = "rgba(185,28,28,0.2)";
+      notice.style.display = "none";
+      const top = document.querySelector(".top");
+      if (top && top.parentNode) {
+        top.parentNode.insertBefore(notice, top.nextSibling);
+      }
+    }
+    if (!notice) return;
+    if (isAspFinalized()) {
+      notice.innerHTML = `<div class="label" style="margin-top:0;color:var(--red);">Finalized</div><div style="font-weight:700;margin-bottom:4px;">Groups and titles have been finalized.</div><div class="muted">This dashboard is now read-only for students.</div>`;
+      notice.style.display = "block";
+    } else {
+      notice.style.display = "none";
+    }
+  }
+
   async function rpc(name, args) {
     const { data, error } = await client.rpc(name, args);
     if (error) throw error;
@@ -40,6 +66,7 @@
     bootstrap = await rpc("bootstrap_section", { p_section_slug: sectionSlug });
     document.getElementById("page-meta").textContent = `Section: ${bootstrap.section.name}`;
     document.getElementById("student-link").href = `aspnet_student_view.html?section=${encodeURIComponent(sectionSlug)}`;
+    renderFinalizedNotice();
   }
 
   window.loginDashboard = async function () {
@@ -81,6 +108,7 @@
     document.getElementById("page-meta").textContent = `${group.projectTitle} · ${dashboard.members.length}/${maxMem} members`;
     document.getElementById("member-count").textContent = `${dashboard.members.length}/${maxMem}`;
     document.getElementById("title-num").textContent = String(group.projectTitleId).padStart(2, "0");
+    document.getElementById("member-search").disabled = isAspFinalized();
 
     const fields = (group.projectFields || []);
     document.getElementById("title-card").innerHTML = `
@@ -94,6 +122,7 @@
 
     renderMembers(maxMem);
     renderGroupChecklist();
+    renderFinalizedNotice();
   }
 
   function renderMembers(maxMem) {
@@ -102,12 +131,16 @@
     box.innerHTML = dashboard.members.map(m => `
       <div class="row">
         <span>${esc(m.fullName)}</span>
-        <button class="btn btn-small" onclick="removeMember('${m.id}')">Remove</button>
+        <button class="btn btn-small" ${isAspFinalized() ? "disabled" : ""} onclick="removeMember('${m.id}')">Remove</button>
       </div>`).join("") || '<p class="muted">No members yet. Search the roster to add members.</p>';
   }
 
   window.renderMemberSearch = async function () {
     if (!dashboard) return;
+    if (isAspFinalized()) {
+      document.getElementById("member-results").innerHTML = '<p class="muted">Groups and titles have been finalized for this section.</p>';
+      return;
+    }
     const q = document.getElementById("member-search").value.trim();
     const students = await rpc("search_section_students", {
       p_group_id: dashboard.group.id,
@@ -117,7 +150,7 @@
     document.getElementById("member-results").innerHTML = students.map(s => {
       const inGroup = dashboard.members.some(m => m.id === s.id);
       const maxMem = dashboard.group.maxMembers || bootstrap.section.maxMembers;
-      const disabled = Boolean(s.assignedGroup) || inGroup || dashboard.members.length >= maxMem;
+      const disabled = isAspFinalized() || Boolean(s.assignedGroup) || inGroup || dashboard.members.length >= maxMem;
       const label = s.assignedGroup ? `In ${s.assignedGroup}` : inGroup ? "Added" : "Add";
       return `<div class="row ${disabled ? "disabled" : ""}">
         <span>${esc(s.fullName)}</span>
@@ -128,6 +161,7 @@
 
   window.addMember = async function (studentId) {
     try {
+      if (isAspFinalized()) throw new Error("Groups and titles have been finalized for this section");
       dashboard = await rpc("add_group_member", {
         p_group_id: dashboard.group.id,
         p_student_id: studentId,
@@ -142,6 +176,7 @@
 
   window.removeMember = async function (studentId) {
     try {
+      if (isAspFinalized()) throw new Error("Groups and titles have been finalized for this section");
       dashboard = await rpc("remove_group_member", {
         p_group_id: dashboard.group.id,
         p_student_id: studentId,
@@ -159,13 +194,14 @@
     document.getElementById("check-count").textContent = `${done}/${checklistItems.length}`;
     document.getElementById("group-checklist").innerHTML = checklistItems.map(([key, label]) => `
       <div class="prop-item ${dashboard.checklist[key] ? "done" : ""}">
-        <input type="checkbox" class="prop-cb" ${dashboard.checklist[key] ? "checked" : ""} onchange="toggleGroupCheck('${key}', this.checked)">
+        <input type="checkbox" class="prop-cb" ${dashboard.checklist[key] ? "checked" : ""} ${isAspFinalized() ? "disabled" : ""} onchange="toggleGroupCheck('${key}', this.checked)">
         <div class="prop-text">${esc(label)}</div>
       </div>`).join("");
   }
 
   window.toggleGroupCheck = async function (key, done) {
     try {
+      if (isAspFinalized()) throw new Error("Groups and titles have been finalized for this section");
       dashboard = await rpc("set_group_checklist", {
         p_group_id: dashboard.group.id,
         p_item_key: key,

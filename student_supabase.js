@@ -34,6 +34,32 @@
     if (statusLine) statusLine.textContent = message || "";
   }
 
+  function isAspFinalized() {
+    return Boolean(bootstrap?.section?.aspFinalized);
+  }
+
+  function ensureFinalizedNotice() {
+    let notice = document.getElementById("asp-finalized-notice");
+    if (!notice) {
+      notice = document.createElement("div");
+      notice.id = "asp-finalized-notice";
+      notice.className = "card";
+      notice.style.borderColor = "rgba(185,28,28,0.2)";
+      notice.style.display = "none";
+      const anchor = document.querySelector(".nav-pills");
+      if (anchor && anchor.parentNode) {
+        anchor.parentNode.insertBefore(notice, anchor.nextSibling);
+      }
+    }
+    if (!notice) return;
+    if (isAspFinalized()) {
+      notice.innerHTML = `<div class="badge badge-red">Finalized</div><div class="card-value">Groups and titles have been finalized.</div><div class="card-sub">This section is read-only for students.</div>`;
+      notice.style.display = "block";
+    } else {
+      notice.style.display = "none";
+    }
+  }
+
   function dashboardUrl(code) {
     const url = new URL("group_dashboard.html", window.location.href);
     url.searchParams.set("section", sectionSlug);
@@ -59,6 +85,7 @@
 
   async function loadBootstrap() {
     bootstrap = await rpc("bootstrap_section", { p_section_slug: sectionSlug });
+    ensureFinalizedNotice();
     renderProjects();
     renderAvailability();
   }
@@ -97,8 +124,8 @@
               <div class="pb-feat">Bootstrap-based interface</div>
               ${banner}
               <div class="project-actions">
-                <button class="btn btn-primary" ${isTaken ? "disabled" : ""} onclick="openClaimDialog(${p.id})">Claim Title</button>
-                <span class="claim-note">Optional. A short confirmation opens before anything is reserved.</span>
+                <button class="btn btn-primary" ${(isTaken || isAspFinalized()) ? "disabled" : ""} onclick="openClaimDialog(${p.id})">${isAspFinalized() ? "Finalized" : "Claim Title"}</button>
+                <span class="claim-note">${isAspFinalized() ? "Groups and titles have been finalized for this section." : "Optional. A short confirmation opens before anything is reserved."}</span>
               </div>
             </div>
           </div>
@@ -121,6 +148,10 @@
   }
 
   window.openClaimDialog = function (projectId) {
+    if (isAspFinalized()) {
+      setStatus("Groups and titles have been finalized for this section.");
+      return;
+    }
     const project = bootstrap.projects.find(p => p.id === Number(projectId));
     if (!project || project.claimedBy) return;
     pendingProjectId = project.id;
@@ -142,6 +173,10 @@
 
   window.confirmProjectClaim = async function () {
     try {
+      if (isAspFinalized()) {
+        setStatus("Groups and titles have been finalized for this section.");
+        return;
+      }
       const code = document.getElementById("claim-code-modal").value.trim();
       const password = prompt("Set a dashboard password for this group. Minimum 4 characters.");
       if (!password) return;

@@ -43,6 +43,31 @@
     sessionStorage.removeItem(IDENTITY_KEY);
   }
 
+  function isIotFinalized() {
+    return Boolean(bootstrapData?.section?.iotFinalized);
+  }
+
+  function renderFinalizedNotice() {
+    let notice = document.getElementById("iot-finalized-notice");
+    if (!notice) {
+      notice = document.createElement("div");
+      notice.id = "iot-finalized-notice";
+      notice.className = "note";
+      notice.style.display = "none";
+      const toolbar = document.querySelector(".groups-toolbar");
+      if (toolbar && toolbar.parentNode) {
+        toolbar.parentNode.insertBefore(notice, toolbar.nextSibling);
+      }
+    }
+    if (!notice) return;
+    if (isIotFinalized()) {
+      notice.innerHTML = "<strong>Finalized.</strong> Groups and titles have been finalized for this section. Student changes are disabled.";
+      notice.style.display = "block";
+    } else {
+      notice.style.display = "none";
+    }
+  }
+
   function renderIdentityState() {
     const exitBtn = document.getElementById("exit-student-mode-btn");
     if (!exitBtn) return;
@@ -99,6 +124,7 @@
     container.innerHTML = '<div class="groups-loading">Loading groups…</div>';
     try {
       bootstrapData = await rpc("iot_bootstrap", { p_section_slug: sectionSlug });
+      renderFinalizedNotice();
       renderGroups();
     } catch (err) {
       container.innerHTML = `<div class="note">Could not load groups: ${esc(err.message || "Unknown error")}.</div>`;
@@ -108,6 +134,7 @@
   function renderGroups() {
     const container = document.getElementById("groups-container");
     if (!container || !bootstrapData) return;
+    renderFinalizedNotice();
 
     const groups = bootstrapData.groups || [];
     const identity = getIdentity();
@@ -130,7 +157,7 @@
         <div class="groups-empty">
           <div class="groups-empty-icon">⚡</div>
           <div class="groups-empty-msg">No groups yet. Be the first to add your group!</div>
-          <button class="btn" onclick="openAddGroupModal()">+ Add Group</button>
+          <button class="btn" ${isIotFinalized() ? "disabled" : ""} onclick="openAddGroupModal()">+ Add Group</button>
         </div>`;
       return;
     }
@@ -140,10 +167,10 @@
       const isFull = count >= MAX_MEMBERS;
       const isMyGroup = myGroupId === g.id;
       const alreadyInAGroup = myGroupId !== null;
-      const isOwner = identity && g.ownerStudentId === identity.studentId;
+      const isLeader = identity && g.ownerStudentId === identity.studentId;
 
       const countClass = isFull ? "full" : "";
-      const titleHtml = isMyGroup && isOwner
+      const titleHtml = isMyGroup && isLeader
         ? `
           <div class="group-edit-fields">
             <input class="group-edit-input" type="text" id="iot-edit-name-${esc(g.id)}" value="${esc(g.name)}" placeholder="Group name">
@@ -156,14 +183,18 @@
       const membersHtml = (g.members && g.members.length > 0)
         ? g.members.map(m => {
             const isMe = identity && m.id === identity.studentId;
-            const canRemove = isOwner || isMe;
+            const canRemove = isLeader || isMe;
             const removeLabel = isMe ? "Leave" : "Remove";
+            const canTransfer = isMyGroup && isLeader && !isMe;
             return `
               <div class="row" style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);">
                 <span class="member-pill" style="display:inline-flex;align-items:center;gap:6px;">
-                  ${esc(m.fullName)}${g.ownerStudentId === m.id ? ' <strong style="font-size:10px;color:var(--accent);">OWNER</strong>' : ''}
+                  ${esc(m.fullName)}${g.ownerStudentId === m.id ? ' <strong style="font-size:10px;color:var(--accent);">LEADER</strong>' : ''}
                 </span>
-                ${isMyGroup && canRemove ? `<button class="btn btn-sm btn-outline" onclick="removeIotMember('${esc(g.id)}', '${esc(m.id)}', '${esc(m.fullName)}')">${removeLabel}</button>` : ""}
+                <div style="display:flex;gap:0.35rem;flex-wrap:wrap;justify-content:flex-end;">
+                  ${canTransfer ? `<button class="btn btn-sm" onclick="transferIotLeadership('${esc(g.id)}', '${esc(m.id)}', '${esc(m.fullName)}')">Make Leader</button>` : ""}
+                  ${isMyGroup && canRemove ? `<button class="btn btn-sm btn-outline" onclick="removeIotMember('${esc(g.id)}', '${esc(m.id)}', '${esc(m.fullName)}')">${removeLabel}</button>` : ""}
+                </div>
               </div>`;
           }).join("")
         : `<span style="font-size:12px;color:var(--muted);">No members yet</span>`;
@@ -180,7 +211,7 @@
       } else {
         joinBtn = `
           <span class="badge badge-green" style="font-size:11px;">Your Group</span>
-          ${isOwner ? `<button class="btn btn-sm" onclick="saveIotGroup('${esc(g.id)}')">Save Details</button>` : ""}
+          ${isLeader ? `<button class="btn btn-sm" onclick="saveIotGroup('${esc(g.id)}')">Save Details</button>` : ""}
           <button class="btn btn-sm btn-outline" onclick="leaveIotGroup('${esc(g.id)}', '${esc(g.name)}')">Leave Group</button>`;
       }
 
@@ -195,7 +226,7 @@
           </div>`;
       }).join("");
 
-      const ownerTools = isMyGroup && isOwner ? `
+      const ownerTools = isMyGroup && isLeader ? `
         <div style="margin-top:0.25rem;">
           <div class="group-inline-status ${groupStatusMessages[g.id]?.kind === "error" ? "error" : groupStatusMessages[g.id]?.kind === "success" ? "success" : ""}">${esc(groupStatusMessages[g.id]?.message || "")}</div>
           <div class="field" style="margin-bottom:0.5rem;">
@@ -374,6 +405,10 @@
   // Add Group Modal
   // ----------------------------------------------------------------
   window.openAddGroupModal = function () {
+    if (isIotFinalized()) {
+      alert("Groups and titles have been finalized for this section.");
+      return;
+    }
     const identity = getIdentity();
     if (!identity) {
       openIdentityModal(function () { window.openAddGroupModal(); });
@@ -392,7 +427,7 @@
     document.getElementById("new-group-name").value = "";
     document.getElementById("new-group-title").value = "";
     document.getElementById("add-group-identity-label").textContent =
-      "Creating as: " + identity.studentName + ". You will be added as the first member.";
+      "Creating as: " + identity.studentName + ". You will be added as the first member and become the group leader.";
     showError("add-group-error", "");
     document.getElementById("add-group-modal-overlay").classList.add("open");
     setTimeout(() => document.getElementById("new-group-name").focus(), 50);
@@ -403,6 +438,10 @@
   };
 
   window.submitCreateGroup = async function () {
+    if (isIotFinalized()) {
+      showError("add-group-error", "Groups and titles have been finalized for this section.");
+      return;
+    }
     const identity = getIdentity();
     if (!identity) { window.openAddGroupModal(); return; }
 
@@ -435,6 +474,10 @@
   let joinTargetGroupId = null;
 
   window.openJoinModal = function (groupId, groupName) {
+    if (isIotFinalized()) {
+      alert("Groups and titles have been finalized for this section.");
+      return;
+    }
     const identity = getIdentity();
     if (!identity) {
       openIdentityModal(function () { window.openJoinModal(groupId, groupName); });
@@ -456,6 +499,10 @@
   };
 
   window.submitJoinGroup = async function () {
+    if (isIotFinalized()) {
+      showError("join-group-error", "Groups and titles have been finalized for this section.");
+      return;
+    }
     const identity = getIdentity();
     if (!identity || !joinTargetGroupId) return;
 
@@ -530,6 +577,15 @@
     });
   }
 
+  async function transferLeadership(groupId, actorStudentId, targetStudentId, actorStudentIdNum) {
+    return await rpc("iot_transfer_leadership", {
+      p_group_id: groupId,
+      p_actor_student_id: actorStudentId,
+      p_target_student_id: targetStudentId,
+      p_actor_student_id_num: actorStudentIdNum || null
+    });
+  }
+
   // Expose for potential external use
   window.searchStudents = searchStudents;
   window.createGroup = createGroup;
@@ -553,6 +609,7 @@
     const identity = getIdentity();
     if (!identity) return;
     try {
+      if (isIotFinalized()) throw new Error("Groups and titles have been finalized for this section");
       const updatedGroups = await addMemberToGroup(groupId, identity.studentId, targetStudentId, identity.studentIdNum);
       bootstrapData.groups = updatedGroups;
       groupSearchResults[groupId] = [];
@@ -567,6 +624,10 @@
   window.removeIotMember = async function (groupId, targetStudentId, studentName) {
     const identity = getIdentity();
     if (!identity) return;
+    if (isIotFinalized()) {
+      alert("Groups and titles have been finalized for this section.");
+      return;
+    }
     const isSelf = identity.studentId === targetStudentId;
     if (!confirm(isSelf ? `Leave "${studentName}" from this group?` : `Remove "${studentName}" from this group?`)) return;
     try {
@@ -587,6 +648,10 @@
   window.leaveIotGroup = async function (groupId, groupName) {
     const identity = getIdentity();
     if (!identity) return;
+    if (isIotFinalized()) {
+      alert("Groups and titles have been finalized for this section.");
+      return;
+    }
     if (!confirm(`Leave "${groupName}"? You can join another group afterward.`)) return;
     try {
       const updatedGroups = await removeMemberFromGroup(groupId, identity.studentId, identity.studentId, identity.studentIdNum);
@@ -597,9 +662,33 @@
     }
   };
 
+  window.transferIotLeadership = async function (groupId, targetStudentId, studentName) {
+    const identity = getIdentity();
+    if (!identity) return;
+    if (isIotFinalized()) {
+      alert("Groups and titles have been finalized for this section.");
+      return;
+    }
+    if (!confirm(`Transfer leadership to "${studentName}"? You will remain a member, but they will become the new leader.`)) return;
+    try {
+      const updatedGroups = await transferLeadership(groupId, identity.studentId, targetStudentId, identity.studentIdNum);
+      bootstrapData.groups = updatedGroups;
+      setGroupStatus(groupId, `Leadership transferred to ${studentName}.`, "success");
+      renderGroups();
+    } catch (err) {
+      setGroupStatus(groupId, err.message || "Could not transfer leadership.", "error");
+      renderGroups();
+    }
+  };
+
   window.saveIotGroup = async function (groupId) {
     const identity = getIdentity();
     if (!identity) return;
+    if (isIotFinalized()) {
+      setGroupStatus(groupId, "Groups and titles have been finalized for this section.", "error");
+      renderGroups();
+      return;
+    }
     const name = document.getElementById("iot-edit-name-" + groupId)?.value?.trim();
     const title = document.getElementById("iot-edit-title-" + groupId)?.value?.trim() || "";
     if (!name) {

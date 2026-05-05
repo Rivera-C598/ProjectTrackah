@@ -69,7 +69,7 @@
       <div class="stat"><div class="num" id="sum-groups">0</div><div class="label">Groups</div></div>
       <div class="stat"><div class="num" id="sum-claims">0</div><div class="label">Title Claims</div></div>
       <div class="stat"><div class="num" id="sum-roster">0</div><div class="label">Roster</div></div>
-      <div class="stat"><div class="num" id="sum-ungrouped">0</div><div class="label">Ungrouped</div></div>
+      <div class="stat"><div class="num" id="sum-ungrouped">0</div><div class="label">ASP Ungrouped</div></div>
     </div>
 
     <div class="grid">
@@ -100,6 +100,15 @@
           <button class="btn btn-danger" onclick="deleteUnusedCodes()">Delete Unused Codes</button>
           <button class="btn btn-danger" onclick="resetAllClaims()">Reset All Claims</button>
         </div>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);">
+          <h2 style="margin-bottom:0.5rem;">Finalization</h2>
+          <p style="margin-bottom:0.75rem;">Lock student changes when a section is finalized. Teachers can still manage records from this page.</p>
+          <div class="actions">
+            <button class="btn" id="asp-finalize-btn" onclick="toggleSectionFinalized('asp')">Finalize ASP</button>
+            <button class="btn" id="iot-finalize-btn" onclick="toggleSectionFinalized('iot')">Finalize IoT</button>
+          </div>
+          <div class="muted" id="finalize-status" style="margin-top:0.75rem;font-size:12px;"></div>
+        </div>
       </div>
 
       <div class="card">
@@ -118,7 +127,7 @@
         <div id="groups-list"></div>
       </div>
       <div class="card">
-        <h2>Ungrouped Students</h2>
+        <h2>ASP Ungrouped Students</h2>
         <div id="ungrouped-list"></div>
       </div>
     </div>
@@ -129,9 +138,15 @@
         <h2 style="margin:0;">IoT Groups</h2>
         <span class="muted" style="font-size:12px;">Manage IoT final project groups for this section</span>
       </div>
-      <div class="card">
-        <div id="iot-roster-info"></div>
-        <div id="iot-groups-list"><div class="muted">Select a section to view IoT groups.</div></div>
+      <div class="grid">
+        <div class="card">
+          <div id="iot-roster-info"></div>
+          <div id="iot-groups-list"><div class="muted">Select a section to view IoT groups.</div></div>
+        </div>
+        <div class="card">
+          <h2>IoT Ungrouped Students</h2>
+          <div id="iot-ungrouped-list"><div class="muted">Select a section to view ungrouped IoT students.</div></div>
+        </div>
       </div>
     </div>
   </div>

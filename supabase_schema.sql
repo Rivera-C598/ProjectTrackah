@@ -13,9 +13,13 @@ create table if not exists public.sections (
   name text not null,
   max_groups int not null default 8 check (max_groups between 1 and 40),
   max_members int not null default 6 check (max_members between 1 and 12),
+  asp_finalized boolean not null default false,
+  iot_finalized boolean not null default false,
   created_by uuid references public.teacher_profiles(id),
   created_at timestamptz not null default now()
 );
+alter table public.sections add column if not exists asp_finalized boolean not null default false;
+alter table public.sections add column if not exists iot_finalized boolean not null default false;
 
 create table if not exists public.section_teachers (
   section_id uuid not null references public.sections(id) on delete cascade,
@@ -127,6 +131,32 @@ as $$
   );
 $$;
 
+drop function if exists public.is_section_asp_finalized(uuid);
+create function public.is_section_asp_finalized(p_section_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((
+    select asp_finalized from public.sections where id = p_section_id
+  ), false);
+$$;
+
+drop function if exists public.is_section_iot_finalized(uuid);
+create function public.is_section_iot_finalized(p_section_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce((
+    select iot_finalized from public.sections where id = p_section_id
+  ), false);
+$$;
+
 drop function if exists public.bootstrap_section(text);
 create function public.bootstrap_section(p_section_slug text)
 returns jsonb
@@ -148,7 +178,8 @@ begin
       'slug', v_section.slug,
       'name', v_section.name,
       'maxGroups', v_section.max_groups,
-      'maxMembers', v_section.max_members
+      'maxMembers', v_section.max_members,
+      'aspFinalized', v_section.asp_finalized
     ),
     'projects', coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -191,6 +222,9 @@ begin
 
   select * into v_section from public.sections where slug = p_section_slug;
   if not found then raise exception 'Section not found'; end if;
+  if v_section.asp_finalized then
+    raise exception 'Groups and titles have been finalized for this section';
+  end if;
 
   select * into v_code
   from public.claim_codes
@@ -274,7 +308,8 @@ as $$
       'projectTitle', pt.name,
       'projectDescription', pt.description,
       'projectFields', pt.fields,
-      'maxMembers', coalesce(g.max_members, sec.max_members)
+      'maxMembers', coalesce(g.max_members, sec.max_members),
+      'aspFinalized', sec.asp_finalized
     ),
     'members', coalesce((
       select jsonb_agg(jsonb_build_object('id', s.id, 'fullName', s.full_name) order by s.full_name)
@@ -308,6 +343,9 @@ begin
   select * into v_group from public.groups where id = p_group_id;
   if not found or v_group.password_hash <> extensions.crypt(p_password, v_group.password_hash) then
     raise exception 'Invalid dashboard session';
+  end if;
+  if public.is_section_asp_finalized(v_group.section_id) then
+    raise exception 'Groups and titles have been finalized for this section';
   end if;
 
   return (
@@ -349,6 +387,9 @@ begin
   if v_group.password_hash <> extensions.crypt(p_password, v_group.password_hash) then
     raise exception 'Invalid dashboard session';
   end if;
+  if public.is_section_asp_finalized(v_group.section_id) then
+    raise exception 'Groups and titles have been finalized for this section';
+  end if;
   select * into v_student from public.students where id = p_student_id;
   if not found or v_student.section_id <> v_group.section_id then
     raise exception 'Student is not in this section';
@@ -381,6 +422,9 @@ begin
   if not found or v_group.password_hash <> extensions.crypt(p_password, v_group.password_hash) then
     raise exception 'Invalid dashboard session';
   end if;
+  if public.is_section_asp_finalized(v_group.section_id) then
+    raise exception 'Groups and titles have been finalized for this section';
+  end if;
   delete from public.group_members where group_id = p_group_id and student_id = p_student_id;
   return public.group_dashboard(p_group_id);
 end;
@@ -400,6 +444,9 @@ begin
   select * into v_group from public.groups where id = p_group_id;
   if not found or v_group.password_hash <> extensions.crypt(p_password, v_group.password_hash) then
     raise exception 'Invalid dashboard session';
+  end if;
+  if public.is_section_asp_finalized(v_group.section_id) then
+    raise exception 'Groups and titles have been finalized for this section';
   end if;
   insert into public.group_checklist (group_id, item_key, done, updated_at)
   values (p_group_id, p_item_key, p_done, now())
@@ -441,6 +488,8 @@ begin
   end if;
 
   return jsonb_build_object(
+    'aspFinalized', (select asp_finalized from public.sections where id = p_section_id),
+    'iotFinalized', (select iot_finalized from public.sections where id = p_section_id),
     'students', coalesce((
       select jsonb_agg(jsonb_build_object(
         'id', s.id,
@@ -658,6 +707,35 @@ begin
 end;
 $$;
 
+drop function if exists public.teacher_set_section_finalized(uuid, text, boolean);
+create function public.teacher_set_section_finalized(p_section_id uuid, p_mode text, p_finalized boolean)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_section_teacher(p_section_id) then raise exception 'Not allowed'; end if;
+
+  if p_mode = 'asp' then
+    update public.sections set asp_finalized = p_finalized where id = p_section_id;
+  elsif p_mode = 'iot' then
+    update public.sections set iot_finalized = p_finalized where id = p_section_id;
+  else
+    raise exception 'Invalid mode';
+  end if;
+
+  return (
+    select jsonb_build_object(
+      'aspFinalized', asp_finalized,
+      'iotFinalized', iot_finalized
+    )
+    from public.sections
+    where id = p_section_id
+  );
+end;
+$$;
+
 drop function if exists public.teacher_move_member(uuid, uuid);
 create function public.teacher_move_member(p_student_id uuid, p_target_group_id uuid)
 returns void
@@ -812,7 +890,8 @@ begin
       'id', v_section.id,
       'slug', v_section.slug,
       'name', v_section.name,
-      'maxMembers', 5
+      'maxMembers', 5,
+      'iotFinalized', v_section.iot_finalized
     ),
     'groups', public._iot_groups_for_section(v_section.id)
   );
@@ -870,6 +949,9 @@ begin
   ) then
     raise exception 'Student is not in this section';
   end if;
+  if public.is_section_iot_finalized(p_section_id) then
+    raise exception 'Groups and titles have been finalized for this section';
+  end if;
 
   -- Verify student ID number if the roster has IDs configured
   if p_student_id_num is not null and exists (
@@ -919,6 +1001,9 @@ declare
 begin
   select * into v_group from public.iot_groups where id = p_group_id;
   if not found then raise exception 'Group not found'; end if;
+  if public.is_section_iot_finalized(v_group.section_id) then
+    raise exception 'Groups and titles have been finalized for this section';
+  end if;
 
   -- Verify student belongs to same section
   if not exists (
@@ -972,6 +1057,9 @@ declare
 begin
   select * into v_group from public.iot_groups where id = p_group_id;
   if not found then raise exception 'Group not found'; end if;
+  if public.is_section_iot_finalized(v_group.section_id) then
+    raise exception 'Groups and titles have been finalized for this section';
+  end if;
 
   if not exists (
     select 1 from public.iot_group_members
@@ -1004,6 +1092,9 @@ declare
 begin
   select * into v_group from public.iot_groups where id = p_group_id;
   if not found then raise exception 'Group not found'; end if;
+  if public.is_section_iot_finalized(v_group.section_id) then
+    raise exception 'Groups and titles have been finalized for this section';
+  end if;
 
   if v_group.owner_student_id is distinct from p_actor_student_id then
     raise exception 'Only the group creator can add members';
@@ -1057,6 +1148,9 @@ declare
 begin
   select * into v_group from public.iot_groups where id = p_group_id;
   if not found then raise exception 'Group not found'; end if;
+  if public.is_section_iot_finalized(v_group.section_id) then
+    raise exception 'Groups and titles have been finalized for this section';
+  end if;
 
   if p_actor_student_id_num is not null and exists (
     select 1 from public.students where id = p_actor_student_id and student_id_num is not null
@@ -1094,6 +1188,53 @@ begin
     set owner_student_id = v_next_owner
     where id = p_group_id;
   end if;
+
+  return public._iot_groups_for_section(v_group.section_id);
+end;
+$$;
+
+drop function if exists public.iot_transfer_leadership(uuid, uuid, uuid, text);
+create function public.iot_transfer_leadership(
+  p_group_id uuid,
+  p_actor_student_id uuid,
+  p_target_student_id uuid,
+  p_actor_student_id_num text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.iot_groups%rowtype;
+begin
+  select * into v_group from public.iot_groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+  if public.is_section_iot_finalized(v_group.section_id) then
+    raise exception 'Groups and titles have been finalized for this section';
+  end if;
+
+  if v_group.owner_student_id is distinct from p_actor_student_id then
+    raise exception 'Only the group leader can transfer leadership';
+  end if;
+
+  if p_actor_student_id_num is not null and exists (
+    select 1 from public.students where id = p_actor_student_id and student_id_num is not null
+  ) then
+    if not public.iot_verify_student_id(p_actor_student_id, p_actor_student_id_num) then
+      raise exception 'Student ID number does not match. Please check your ID and try again.';
+    end if;
+  end if;
+
+  if not exists (
+    select 1 from public.iot_group_members where group_id = p_group_id and student_id = p_target_student_id
+  ) then
+    raise exception 'Target student is not a member of this group';
+  end if;
+
+  update public.iot_groups
+  set owner_student_id = p_target_student_id
+  where id = p_group_id;
 
   return public._iot_groups_for_section(v_group.section_id);
 end;
@@ -1142,12 +1283,40 @@ security definer
 set search_path = public
 as $$
 declare
+  v_group public.iot_groups%rowtype;
   v_section_id uuid;
+  v_next_leader uuid;
 begin
-  select section_id into v_section_id from public.iot_groups where id = p_group_id;
+  select * into v_group from public.iot_groups where id = p_group_id;
   if not found then raise exception 'Group not found'; end if;
+  v_section_id := v_group.section_id;
   if not public.is_section_teacher(v_section_id) then raise exception 'Not allowed'; end if;
+
+  if not exists (
+    select 1 from public.iot_group_members where group_id = p_group_id and student_id = p_student_id
+  ) then
+    raise exception 'Student is not in this group';
+  end if;
+
   delete from public.iot_group_members where group_id = p_group_id and student_id = p_student_id;
+
+  if v_group.owner_student_id = p_student_id then
+    select student_id into v_next_leader
+    from public.iot_group_members
+    where group_id = p_group_id
+    order by created_at, student_id
+    limit 1;
+
+    if v_next_leader is null then
+      delete from public.iot_groups where id = p_group_id;
+      return public._iot_groups_for_section(v_section_id);
+    end if;
+
+    update public.iot_groups
+    set owner_student_id = v_next_leader
+    where id = p_group_id;
+  end if;
+
   return public._iot_groups_for_section(v_section_id);
 end;
 $$;
@@ -1174,18 +1343,51 @@ begin
 end;
 $$;
 
+-- teacher_iot_transfer_leadership
+drop function if exists public.teacher_iot_transfer_leadership(uuid, uuid);
+create function public.teacher_iot_transfer_leadership(p_group_id uuid, p_target_student_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group public.iot_groups%rowtype;
+begin
+  select * into v_group from public.iot_groups where id = p_group_id;
+  if not found then raise exception 'Group not found'; end if;
+  if not public.is_section_teacher(v_group.section_id) then raise exception 'Not allowed'; end if;
+
+  if not exists (
+    select 1 from public.iot_group_members
+    where group_id = p_group_id and student_id = p_target_student_id
+  ) then
+    raise exception 'Target student is not a member of this group';
+  end if;
+
+  update public.iot_groups
+  set owner_student_id = p_target_student_id
+  where id = p_group_id;
+
+  return public._iot_groups_for_section(v_group.section_id);
+end;
+$$;
+
 -- teacher_iot_move_member
 drop function if exists public.teacher_iot_move_member(uuid, uuid);
+drop function if exists public.teacher_iot_move_member(uuid, uuid, uuid);
 create function public.teacher_iot_move_member(p_student_id uuid, p_target_group_id uuid)
-returns void
+returns jsonb
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
   v_section uuid;
+  v_source_group_id uuid;
   v_target public.iot_groups%rowtype;
   v_count int;
+  v_next_leader uuid;
 begin
   select section_id into v_section from public.students where id = p_student_id;
   select * into v_target from public.iot_groups where id = p_target_group_id;
@@ -1193,9 +1395,42 @@ begin
     raise exception 'Invalid move';
   end if;
   if not public.is_section_teacher(v_section) then raise exception 'Not allowed'; end if;
+
+  select group_id into v_source_group_id
+  from public.iot_group_members
+  where student_id = p_student_id;
+  if v_source_group_id is null then
+    raise exception 'Student is not in an IoT group';
+  end if;
+  if v_source_group_id = p_target_group_id then
+    raise exception 'Student is already in that group';
+  end if;
+
   select count(*) into v_count from public.iot_group_members where group_id = p_target_group_id;
   if v_count >= 5 then raise exception 'Target group is full'; end if;
+
   delete from public.iot_group_members where student_id = p_student_id;
   insert into public.iot_group_members (group_id, student_id) values (p_target_group_id, p_student_id);
+
+  if exists (
+    select 1 from public.iot_groups
+    where id = v_source_group_id and owner_student_id = p_student_id
+  ) then
+    select student_id into v_next_leader
+    from public.iot_group_members
+    where group_id = v_source_group_id
+    order by created_at, student_id
+    limit 1;
+
+    if v_next_leader is null then
+      delete from public.iot_groups where id = v_source_group_id;
+    else
+      update public.iot_groups
+      set owner_student_id = v_next_leader
+      where id = v_source_group_id;
+    end if;
+  end if;
+
+  return public._iot_groups_for_section(v_section);
 end;
 $$;

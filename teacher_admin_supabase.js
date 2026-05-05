@@ -7,8 +7,9 @@
   let sections = [];
   let currentSectionId = "";
   let detail = { students: [], codes: [], groups: [] };
-  const PAGE_SIZES = { groups: 4, ungrouped: 12, iot: 4 };
-  let pages = { groups: 1, ungrouped: 1, iot: 1 };
+  let iotGroups = [];
+  const PAGE_SIZES = { groups: 4, ungrouped: 12, iot: 4, iotUngrouped: 12 };
+  let pages = { groups: 1, ungrouped: 1, iot: 1, iotUngrouped: 1 };
 
   function esc(value) {
     return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -58,6 +59,37 @@
       </div>`;
   }
 
+  function getCurrentSection() {
+    return sections.find(section => section.id === currentSectionId) || null;
+  }
+
+  function getIotUngroupedStudents() {
+    const groupedIds = new Set(
+      iotGroups.flatMap(group => (group.members || []).map(member => member.id))
+    );
+    return detail.students.filter(student => !groupedIds.has(student.id));
+  }
+
+  function updateFinalizeControls() {
+    const aspBtn = document.getElementById("asp-finalize-btn");
+    const iotBtn = document.getElementById("iot-finalize-btn");
+    const status = document.getElementById("finalize-status");
+    if (!aspBtn || !iotBtn || !status) return;
+    if (!currentSectionId) {
+      aspBtn.disabled = true;
+      iotBtn.disabled = true;
+      status.textContent = "Select a section to manage finalization.";
+      return;
+    }
+    const aspFinalized = Boolean(detail.aspFinalized);
+    const iotFinalized = Boolean(detail.iotFinalized);
+    aspBtn.disabled = false;
+    iotBtn.disabled = false;
+    aspBtn.textContent = aspFinalized ? "Reopen ASP" : "Finalize ASP";
+    iotBtn.textContent = iotFinalized ? "Reopen IoT" : "Finalize IoT";
+    status.textContent = `ASP: ${aspFinalized ? "Finalized" : "Open"} | IoT: ${iotFinalized ? "Finalized" : "Open"}`;
+  }
+
   window.changePage = function (kind, delta) {
     pages[kind] = Math.max(1, pages[kind] + delta);
     render();
@@ -81,7 +113,7 @@
   async function loadSections() {
     sections = await rpc("teacher_bootstrap");
     const picker = document.getElementById("section-picker");
-    picker.innerHTML = sections.map(s => `<option value="${s.id}">${esc(s.name)} (${esc(s.slug)})</option>`).join("");
+    picker.innerHTML = sections.map(section => `<option value="${section.id}">${esc(section.name)} (${esc(section.slug)})</option>`).join("");
     currentSectionId = currentSectionId || sections[0]?.id || "";
     picker.value = currentSectionId;
     if (currentSectionId) await loadSectionDetail();
@@ -90,7 +122,7 @@
 
   window.selectSection = async function (sectionId) {
     currentSectionId = sectionId;
-    pages = { groups: 1, ungrouped: 1, iot: 1 };
+    pages = { groups: 1, ungrouped: 1, iot: 1, iotUngrouped: 1 };
     await loadSectionDetail();
     render();
   };
@@ -98,6 +130,7 @@
   async function loadSectionDetail() {
     if (!currentSectionId) {
       detail = { students: [], codes: [], groups: [] };
+      iotGroups = [];
       return;
     }
     detail = await rpc("teacher_section_detail", { p_section_id: currentSectionId });
@@ -131,7 +164,7 @@
         alert("Create or select a section first.");
         return;
       }
-      const names = document.getElementById("roster-input").value.split("\n").map(n => n.trim()).filter(Boolean);
+      const names = document.getElementById("roster-input").value.split("\n").map(name => name.trim()).filter(Boolean);
       await rpc("teacher_replace_roster", { p_section_id: currentSectionId, p_names: names });
       await loadSectionDetail();
       render();
@@ -141,7 +174,7 @@
   };
 
   window.loadSampleRoster = function () {
-    document.getElementById("roster-input").value = Array.from({ length: 43 }, (_, i) => `Student ${String(i + 1).padStart(2, "0")}`).join("\n");
+    document.getElementById("roster-input").value = Array.from({ length: 43 }, (_, index) => `Student ${String(index + 1).padStart(2, "0")}`).join("\n");
   };
 
   window.generateCodes = async function () {
@@ -159,18 +192,21 @@
   };
 
   window.copyAllCodes = async function () {
-    const codes = detail.codes.map(c => c.code).join("\n");
-    if (!codes) { alert("No codes to copy."); return; }
+    const codes = detail.codes.map(code => code.code).join("\n");
+    if (!codes) {
+      alert("No codes to copy.");
+      return;
+    }
     await navigator.clipboard.writeText(codes);
     const btn = document.getElementById("copy-codes-btn");
-    const orig = btn.textContent;
+    const original = btn.textContent;
     btn.textContent = "Copied!";
-    setTimeout(() => { btn.textContent = orig; }, 1500);
+    setTimeout(() => { btn.textContent = original; }, 1500);
   };
 
-  window.setGroupMaxMembers = async function (groupId, val) {
+  window.setGroupMaxMembers = async function (groupId, value) {
     try {
-      await rpc("teacher_set_group_max_members", { p_group_id: groupId, p_max_members: parseInt(val) });
+      await rpc("teacher_set_group_max_members", { p_group_id: groupId, p_max_members: parseInt(value, 10) });
       await loadSectionDetail();
       render();
     } catch (err) {
@@ -190,8 +226,11 @@
 
   window.deleteUnusedCodes = async function () {
     if (!currentSectionId) return;
-    const unusedCount = detail.codes.filter(c => !c.used).length;
-    if (unusedCount === 0) { alert("No unused codes to delete."); return; }
+    const unusedCount = detail.codes.filter(code => !code.used).length;
+    if (unusedCount === 0) {
+      alert("No unused codes to delete.");
+      return;
+    }
     if (!confirm(`Delete ${unusedCount} unused code(s) for this section?`)) return;
     try {
       const deleted = await rpc("teacher_delete_unused_codes", { p_section_id: currentSectionId });
@@ -230,11 +269,32 @@
     alert("For Supabase, reset data from the Supabase Table Editor or SQL editor. Prototype local reset is disabled while Supabase is configured.");
   };
 
-  // ----------------------------------------------------------------
-  // IoT Group Management
-  // ----------------------------------------------------------------
-
-  let iotGroups = [];
+  window.toggleSectionFinalized = async function (mode) {
+    if (!currentSectionId) {
+      alert("Select a section first.");
+      return;
+    }
+    const isAsp = mode === "asp";
+    const currentlyFinalized = isAsp ? Boolean(detail.aspFinalized) : Boolean(detail.iotFinalized);
+    const label = isAsp ? "ASP" : "IoT";
+    const nextState = !currentlyFinalized;
+    const confirmMsg = nextState
+      ? `Finalize ${label} for this section? Students will no longer be able to make changes.`
+      : `Reopen ${label} for this section? Students will be able to make changes again.`;
+    if (!confirm(confirmMsg)) return;
+    try {
+      const updated = await rpc("teacher_set_section_finalized", {
+        p_section_id: currentSectionId,
+        p_mode: mode,
+        p_finalized: nextState
+      });
+      detail.aspFinalized = Boolean(updated.aspFinalized);
+      detail.iotFinalized = Boolean(updated.iotFinalized);
+      updateFinalizeControls();
+    } catch (err) {
+      alert(err.message || "Could not update finalization.");
+    }
+  };
 
   async function loadIotGroups() {
     const container = document.getElementById("iot-groups-list");
@@ -242,21 +302,25 @@
     if (!currentSectionId) {
       container.innerHTML = '<div class="muted">Select a section to view IoT groups.</div>';
       iotGroups = [];
+      renderIotRosterInfo();
+      renderIotUngrouped();
       return;
     }
     try {
       iotGroups = await rpc("teacher_iot_section_detail", { p_section_id: currentSectionId });
       renderIotRosterInfo();
       renderIotGroups(iotGroups);
+      renderIotUngrouped();
     } catch (err) {
       container.innerHTML = `<div class="muted">Could not load IoT groups: ${esc(err.message || "Unknown error")}</div>`;
+      iotGroups = [];
+      renderIotUngrouped();
     }
   }
 
   function renderIotRosterInfo() {
-    const section = sections.find(s => s.id === currentSectionId);
+    const section = getCurrentSection();
     const rosterCount = detail.students ? detail.students.length : 0;
-    const slug = section ? section.slug : "";
     const infoEl = document.getElementById("iot-roster-info");
     if (!infoEl) return;
     if (!currentSectionId || !section) {
@@ -265,9 +329,25 @@
     }
     infoEl.innerHTML = `
       <div style="font-size:12px;color:var(--muted);margin-bottom:0.75rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;">
-        <span>Roster: <strong style="color:var(--text);">${rosterCount} student${rosterCount !== 1 ? "s" : ""}</strong> — IoT identity search uses this section's roster. Upload or edit it in the Roster card above.</span>
-        <span>Student URL: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:11px;">iot_student_view.html?section=${esc(slug)}</code></span>
+        <span>Roster: <strong style="color:var(--text);">${rosterCount} student${rosterCount !== 1 ? "s" : ""}</strong> - IoT identity search uses this section's roster. Upload or edit it in the Roster card above.</span>
+        <span>Student URL: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:11px;">iot_student_view.html?section=${esc(section.slug)}</code></span>
       </div>`;
+  }
+
+  function renderIotUngrouped() {
+    const container = document.getElementById("iot-ungrouped-list");
+    if (!container) return;
+    if (!currentSectionId) {
+      container.innerHTML = '<div class="muted">Select a section to view ungrouped IoT students.</div>';
+      return;
+    }
+    const ungrouped = getIotUngroupedStudents();
+    const paged = pageSlice(ungrouped, "iotUngrouped");
+    container.innerHTML = paged.items.map(student => `
+      <div class="row"><span>${esc(student.fullName)}</span></div>`).join("") || '<div class="muted">No ungrouped IoT students.</div>';
+    if (ungrouped.length) {
+      container.innerHTML += pagerHtml("iotUngrouped", ungrouped.length, paged.start, paged.end, paged.totalPages);
+    }
   }
 
   function renderIotGroups(groups) {
@@ -278,22 +358,23 @@
       return;
     }
     const paged = pageSlice(groups, "iot");
-    container.innerHTML = paged.items.map(g => {
+    container.innerHTML = paged.items.map(group => {
       const moveOptions = groups
-        .filter(target => target.id !== g.id)
+        .filter(target => target.id !== group.id)
         .map(target => `<option value="${target.id}">${esc(target.name)}</option>`)
         .join("");
-      const memberRows = (g.members && g.members.length > 0)
-        ? g.members.map(m => `
+      const memberRows = (group.members && group.members.length > 0)
+        ? group.members.map(member => `
             <div class="row" style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
-              <span style="font-size:13px;">${esc(m.fullName)}</span>
+              <span style="font-size:13px;">${esc(member.fullName)}${group.ownerStudentId === member.id ? ' <span class="pill ok">Leader</span>' : ""}</span>
               <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
-                <select id="iot-move-${esc(m.id)}" style="width:auto;padding:3px 6px;font-size:12px;">
+                <select id="iot-move-${esc(member.id)}" style="width:auto;padding:3px 6px;font-size:12px;">
                   <option value="">Move to...</option>
                   ${moveOptions}
                 </select>
-                <button class="btn btn-small" ${moveOptions ? "" : "disabled"} onclick="moveIotMember('${esc(m.id)}')">Move</button>
-                <button class="btn btn-danger btn-small" onclick="removeIotMember('${esc(g.id)}', '${esc(m.id)}', '${esc(m.fullName)}')">Remove</button>
+                <button class="btn btn-small" ${moveOptions ? "" : "disabled"} onclick="moveIotMember('${esc(member.id)}')">Move</button>
+                ${group.ownerStudentId !== member.id ? `<button class="btn btn-small" onclick="transferIotLeadership('${esc(group.id)}', '${esc(member.id)}', '${esc(member.fullName)}')">Make Leader</button>` : ""}
+                <button class="btn btn-danger btn-small" onclick="removeIotMember('${esc(group.id)}', '${esc(member.id)}', '${esc(member.fullName)}')">Remove</button>
               </div>
             </div>`).join("")
         : '<div class="muted" style="font-size:13px;">No members</div>';
@@ -302,15 +383,15 @@
       <div class="row" style="display:block;margin-bottom:0.75rem;border:1px solid var(--border);border-radius:8px;padding:0.75rem 1rem;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
           <div>
-            <input id="iot-name-${esc(g.id)}" value="${esc(g.name)}" style="width:auto;min-width:120px;font-size:14px;font-weight:600;padding:3px 7px;">
-            <input id="iot-title-${esc(g.id)}" value="${esc(g.projectTitle || '')}" placeholder="Project title…" style="width:auto;min-width:180px;font-size:13px;padding:3px 7px;margin-left:6px;">
+            <input id="iot-name-${esc(group.id)}" value="${esc(group.name)}" style="width:auto;min-width:120px;font-size:14px;font-weight:600;padding:3px 7px;">
+            <input id="iot-title-${esc(group.id)}" value="${esc(group.projectTitle || "")}" placeholder="Project title..." style="width:auto;min-width:180px;font-size:13px;padding:3px 7px;margin-left:6px;">
           </div>
           <div style="display:flex;gap:0.5rem;">
-            <button class="btn btn-small" onclick="updateIotGroup('${esc(g.id)}')">Save</button>
-            <button class="btn btn-danger btn-small" onclick="removeIotGroup('${esc(g.id)}', '${esc(g.name)}')">Remove Group</button>
+            <button class="btn btn-small" onclick="updateIotGroup('${esc(group.id)}')">Save</button>
+            <button class="btn btn-danger btn-small" onclick="removeIotGroup('${esc(group.id)}', '${esc(group.name)}')">Remove Group</button>
           </div>
         </div>
-        <div class="muted" style="font-size:12px;margin-bottom:0.5rem;">${g.memberCount || 0} / 5 members</div>
+        <div class="muted" style="font-size:12px;margin-bottom:0.5rem;">${group.memberCount || 0} / 5 members</div>
         ${memberRows}
       </div>`;
     }).join("") + pagerHtml("iot", groups.length, paged.start, paged.end, paged.totalPages);
@@ -331,6 +412,7 @@
     try {
       iotGroups = await rpc("teacher_iot_remove_member", { p_group_id: groupId, p_student_id: studentId });
       renderIotGroups(iotGroups);
+      renderIotUngrouped();
     } catch (err) {
       alert(err.message || "Could not remove member.");
     }
@@ -339,7 +421,10 @@
   window.updateIotGroup = async function (groupId) {
     const name = document.getElementById("iot-name-" + groupId)?.value?.trim();
     const title = document.getElementById("iot-title-" + groupId)?.value?.trim();
-    if (!name) { alert("Group name cannot be empty."); return; }
+    if (!name) {
+      alert("Group name cannot be empty.");
+      return;
+    }
     try {
       iotGroups = await rpc("teacher_iot_update_group", {
         p_group_id: groupId,
@@ -347,6 +432,7 @@
         p_project_title: title || ""
       });
       renderIotGroups(iotGroups);
+      renderIotUngrouped();
     } catch (err) {
       alert(err.message || "Could not update IoT group.");
     }
@@ -365,22 +451,37 @@
         p_target_group_id: targetGroupId
       });
       renderIotGroups(iotGroups);
+      renderIotUngrouped();
     } catch (err) {
       alert(err.message || "Could not move member.");
     }
   };
 
+  window.transferIotLeadership = async function (groupId, studentId, studentName) {
+    if (!confirm(`Make "${studentName}" the leader of this IoT group?`)) return;
+    try {
+      iotGroups = await rpc("teacher_iot_transfer_leadership", {
+        p_group_id: groupId,
+        p_target_student_id: studentId
+      });
+      renderIotGroups(iotGroups);
+      renderIotUngrouped();
+    } catch (err) {
+      alert(err.message || "Could not transfer leadership.");
+    }
+  };
+
   function render() {
-    const section = sections.find(s => s.id === currentSectionId);
+    const section = getCurrentSection();
     document.getElementById("section-name").value = section?.name || "";
     document.getElementById("section-slug").value = section?.slug || "";
-    document.getElementById("roster-input").value = detail.students.map(s => s.fullName).join("\n");
+    document.getElementById("roster-input").value = detail.students.map(student => student.fullName).join("\n");
 
-    const ungrouped = detail.students.filter(s => !s.groupName);
+    const aspUngrouped = detail.students.filter(student => !student.groupName);
     document.getElementById("sum-groups").textContent = detail.groups.length;
     document.getElementById("sum-claims").textContent = detail.groups.length;
     document.getElementById("sum-roster").textContent = detail.students.length;
-    document.getElementById("sum-ungrouped").textContent = ungrouped.length;
+    document.getElementById("sum-ungrouped").textContent = aspUngrouped.length;
 
     document.getElementById("codes-list").innerHTML = detail.codes.map(code => `
       <div class="row">
@@ -390,25 +491,25 @@
       </div>`).join("") || '<div class="muted">No codes yet.</div>';
 
     const pagedGroups = pageSlice(detail.groups, "groups");
-    document.getElementById("groups-list").innerHTML = pagedGroups.items.map(g => {
-      const opts = [4,5,6,7,8].map(n =>
-        `<option value="${n}" ${g.maxMembers === n ? "selected" : ""}>${n}</option>`
+    document.getElementById("groups-list").innerHTML = pagedGroups.items.map(group => {
+      const options = [4, 5, 6, 7, 8].map(size =>
+        `<option value="${size}" ${group.maxMembers === size ? "selected" : ""}>${size}</option>`
       ).join("");
       return `
       <div class="row" style="display:block;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;flex-wrap:wrap;">
-          <div><strong>${esc(g.name)}</strong> <span class="pill ok">${esc(g.projectTitle)}</span></div>
+          <div><strong>${esc(group.name)}</strong> <span class="pill ok">${esc(group.projectTitle)}</span></div>
           <div style="display:flex;gap:0.5rem;align-items:center;">
             <label style="font-size:11px;color:var(--muted);white-space:nowrap;">Max members:
-              <select style="width:auto;padding:3px 6px;font-size:12px;" onchange="setGroupMaxMembers('${g.id}', this.value)">${opts}</select>
+              <select style="width:auto;padding:3px 6px;font-size:12px;" onchange="setGroupMaxMembers('${group.id}', this.value)">${options}</select>
             </label>
-            <button class="btn btn-danger btn-small" onclick="removeGroup('${g.id}', '${esc(g.name)}')">Remove</button>
+            <button class="btn btn-danger btn-small" onclick="removeGroup('${group.id}', '${esc(group.name)}')">Remove</button>
           </div>
         </div>
-        <div class="muted">${g.members.length}/${g.maxMembers} members</div>
-        <div>${g.members.map(esc).join(", ") || "No members"}</div>
+        <div class="muted">${group.members.length}/${group.maxMembers} members</div>
+        <div>${group.members.map(esc).join(", ") || "No members"}</div>
         <div style="margin-top:0.5rem;">
-          <a class="btn btn-small" href="group_dashboard.html?section=${encodeURIComponent(section?.slug || "")}&code=${encodeURIComponent(g.code || "")}">Dashboard Page</a>
+          <a class="btn btn-small" href="group_dashboard.html?section=${encodeURIComponent(section?.slug || "")}&code=${encodeURIComponent(group.code || "")}">Dashboard Page</a>
         </div>
       </div>`;
     }).join("") || '<div class="muted">No groups yet.</div>';
@@ -416,11 +517,14 @@
       document.getElementById("groups-list").innerHTML += pagerHtml("groups", detail.groups.length, pagedGroups.start, pagedGroups.end, pagedGroups.totalPages);
     }
 
-    const pagedUngrouped = pageSlice(ungrouped, "ungrouped");
-    document.getElementById("ungrouped-list").innerHTML = pagedUngrouped.items.map(s => `
-      <div class="row"><span>${esc(s.fullName)}</span></div>`).join("") || '<div class="muted">No ungrouped students.</div>';
-    if (ungrouped.length) {
-      document.getElementById("ungrouped-list").innerHTML += pagerHtml("ungrouped", ungrouped.length, pagedUngrouped.start, pagedUngrouped.end, pagedUngrouped.totalPages);
+    const pagedUngrouped = pageSlice(aspUngrouped, "ungrouped");
+    document.getElementById("ungrouped-list").innerHTML = pagedUngrouped.items.map(student => `
+      <div class="row"><span>${esc(student.fullName)}</span></div>`).join("") || '<div class="muted">No ungrouped students.</div>';
+    if (aspUngrouped.length) {
+      document.getElementById("ungrouped-list").innerHTML += pagerHtml("ungrouped", aspUngrouped.length, pagedUngrouped.start, pagedUngrouped.end, pagedUngrouped.totalPages);
     }
+
+    updateFinalizeControls();
+    renderIotUngrouped();
   }
 })();
