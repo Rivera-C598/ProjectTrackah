@@ -582,6 +582,11 @@
           Download a starter proposal file with the title, purpose, target users, planned fields, CRUD scope, validation rules, member roles, and checkpoint notes.
         </div>
         <button class="btn btn-primary" style="margin-top:0.75rem;" onclick="downloadProposalTemplate()">Download Proposal Template</button>
+        <div class="template-box" style="margin-top:1rem;">
+          Download the official final documentation template. Includes group members &amp; roles, system description, purpose/objectives, system features, database tables, screenshots, how to run locally, and project links (GitHub, SQL file, hosted link).
+        </div>
+        <button class="btn btn-primary" style="margin-top:0.75rem;" onclick="downloadDocumentationTemplate()">Download Documentation Template</button>
+        <p style="margin-top:0.5rem;font-size:12px;color:var(--muted);">Submit as PDF, DOCX, or Google Docs link.</p>
       </div>
     </div>
   </div>
@@ -627,6 +632,7 @@ initProposal();
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
 <script src="supabase-config.js"></script>
 <script src="proposal_docx.js"></script>
+<script src="asp_documentation_docx.js"></script>
 <script src="student_supabase.js"></script>
 </body>
 </html>

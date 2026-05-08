@@ -214,6 +214,7 @@
     <a class="nav-pill" href="#availability">Availability</a>
     <a class="nav-pill" href="#checkpoints">Checkpoints</a>
     <a class="nav-pill" href="#proposal-checklist">Proposal Checklist</a>
+    <a class="nav-pill" href="#documentation">Documentation</a>
   </nav>
 
   <!-- REQUIREMENTS -->
@@ -441,8 +442,50 @@
     </div>
   </section>
 
+  <hr>
+
+  <!-- DOCUMENTATION TEMPLATE -->
+  <section class="section" id="documentation">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div class="section-title">Documentation Template</div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:0.5rem;">Required Template</div>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:1.25rem;">
+        Download the official documentation template. Fill in all fields completely before submitting or presenting.
+      </p>
+      <button
+        onclick="downloadPhpDocx(null, null)"
+        style="
+          display:inline-flex; align-items:center; gap:8px;
+          font-size:13px; font-weight:600; padding:10px 20px;
+          background:var(--accent-dim); border:1px solid rgba(232,97,26,0.3);
+          color:var(--accent); border-radius:8px; cursor:pointer;
+          transition:all 0.2s; font-family:inherit;
+        "
+        onmouseover="this.style.background='rgba(232,97,26,0.2)'"
+        onmouseout="this.style.background='var(--accent-dim)'"
+      >
+        &#8595; Download Documentation Template (.docx)
+      </button>
+      <div class="note" style="margin-top:1rem;">
+        A blank template is generated with all required sections. Fill in your group name, project title, members, and all other fields before submitting.
+      </div>
+      <div class="note" style="margin-top:0.5rem;">
+        <strong>Template includes:</strong> group members &amp; roles, system description, purpose/objectives, system features, database tables, screenshots, how to run locally, and project links (GitHub, SQL file, hosted link).
+      </div>
+      <div class="note" style="margin-top:0.5rem;">
+        <strong>Submit as:</strong> PDF, DOCX, or Google Docs link.
+      </div>
+    </div>
+  </section>
+
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
+<script src="php_documentation_docx.js"></script>
 <script>
 // Availability is managed by the instructor. All titles shown as available here for reference.
 const projects = [

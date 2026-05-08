@@ -215,6 +215,7 @@ declare
   v_group public.groups%rowtype;
   v_group_count int;
   v_group_name text;
+  v_group_index int;
 begin
   if length(coalesce(p_password, '')) < 4 then
     raise exception 'Password must be at least 4 characters';
@@ -245,7 +246,19 @@ begin
     raise exception 'Maximum groups reached for this section';
   end if;
 
-  v_group_name := 'Group ' || chr(65 + v_group_count);
+  for v_group_index in 0..(v_section.max_groups - 1) loop
+    v_group_name := 'Group ' || chr(65 + v_group_index);
+    exit when not exists (
+      select 1
+      from public.groups
+      where section_id = v_section.id
+        and name = v_group_name
+    );
+  end loop;
+
+  if v_group_name is null then
+    raise exception 'Maximum groups reached for this section';
+  end if;
 
   insert into public.groups (section_id, code_id, name, password_hash, project_title_id)
   values (

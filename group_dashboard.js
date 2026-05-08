@@ -219,6 +219,11 @@
     await window.downloadProposalDocx(dashboard.group, bootstrap.section, dashboard.members);
   };
 
+  window.downloadDocumentationTemplate = async function () {
+    if (!dashboard) return;
+    await window.downloadAspDocx(dashboard.group, bootstrap.section, dashboard.members);
+  };
+
   async function init() {
     document.getElementById("group-code").value = codeFromUrl || sessionStorage.getItem(`aspdash:${sectionSlug}:code`) || "";
     document.getElementById("group-password").value = sessionStorage.getItem(`aspdash:${sectionSlug}:password`) || "";

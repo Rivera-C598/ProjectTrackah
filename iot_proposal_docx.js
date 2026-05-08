@@ -216,9 +216,43 @@ window.downloadIotDocx = async function (group, section) {
         sectionHeading("6. Member Contributions"),
         contributionsTable,
 
-        new Paragraph({ children: [run("")], spacing: { after: 160 } }),
+        // 7. Screenshots
+        sectionHeading("7. Screenshots"),
+        bodyText("Paste screenshots or photos of your completed project below. Label each one clearly."),
+        subHeading("7.1 Tinkercad Circuit (completed)"),
+        ...blankLines(8),
+        subHeading("7.2 Physical Setup (if applicable)"),
+        ...blankLines(8),
+        subHeading("7.3 Serial Monitor / Output (if applicable)"),
+        ...blankLines(5),
+
+        // 8. How to Access / Run
+        sectionHeading("8. How to Access / Run"),
+        bodyText("Follow these steps to view and run the project:"),
+        new Paragraph({ children: [run("1.", { bold: true }), run("  Open the Tinkercad link below and click "), run("Start Simulation", { bold: true }), run(" to run the circuit.")], spacing: { after: 60 } }),
+        new Paragraph({ children: [run("2.", { bold: true }), run("  If testing with a physical Arduino: upload the sketch from the GitHub repository using the Arduino IDE.")], spacing: { after: 60 } }),
+        new Paragraph({ children: [run("3.", { bold: true }), run("  Ensure all components are connected as described in Section 4 before powering the circuit.")], spacing: { after: 80 } }),
+        ph("[Add any additional steps specific to your project here]"),
+        ...blankLines(2),
+
+        // 9. Project Links
+        sectionHeading("9. Project Links"),
+        makeTable(
+          ["Item", "Value"],
+          [
+            ["GitHub Repository", "[https://github.com/username/repo-name  —  or write: Not applicable]"],
+            ["Tinkercad Circuit Link", "[https://www.tinkercad.com/things/your-circuit-link]"],
+            ["Other Link (if any)", "[e.g. demo video, Google Drive  —  or write: None]"]
+          ]
+        ),
+
+        new Paragraph({ children: [run("")], spacing: { after: 200 } }),
         new Paragraph({
           children: [run("Tinkercad Circuit Name Format: ", { bold: true }), run(`Group [Number] - Final Project - ${projectTitle}`)],
+          spacing: { after: 60 }
+        }),
+        new Paragraph({
+          children: [run("Submit as PDF, DOCX, or Google Docs link.", { bold: true, italic: true, color: MUTED })],
           spacing: { after: 60 }
         }),
 

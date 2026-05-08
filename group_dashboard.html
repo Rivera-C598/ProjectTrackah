@@ -115,10 +115,16 @@
     </div>
 
     <div class="tab" id="tab-template">
-      <div class="card">
+      <div class="card" style="margin-bottom:1rem;">
         <h2>Proposal Template</h2>
         <p>Download a starter proposal with your group name, title, members, suggested fields, CRUD scope, validation rules, and checkpoint notes.</p>
         <button class="btn btn-primary" style="margin-top:0.75rem;" onclick="downloadProposalTemplate()">Download Proposal Template</button>
+      </div>
+      <div class="card">
+        <h2>Final Documentation Template</h2>
+        <p>Download the official final documentation template. Fill in all fields completely before submitting or presenting. Includes group members &amp; roles, system description, purpose/objectives, system features, database tables, screenshots, how to run locally, and project links.</p>
+        <button class="btn btn-primary" style="margin-top:0.75rem;" onclick="downloadDocumentationTemplate()">Download Documentation Template</button>
+        <p style="margin-top:0.5rem;font-size:12px;">Submit as PDF, DOCX, or Google Docs link.</p>
       </div>
     </div>
   </div>
@@ -128,6 +134,7 @@
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js"></script>
 <script src="supabase-config.js"></script>
 <script src="proposal_docx.js"></script>
+<script src="asp_documentation_docx.js"></script>
 <script src="group_dashboard.js"></script>
 </body>
 </html>

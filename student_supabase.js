@@ -302,6 +302,11 @@
     await window.downloadProposalDocx(dashboard.group, bootstrap.section, dashboard.members);
   };
 
+  window.downloadDocumentationTemplate = async function () {
+    if (!dashboard) return;
+    await window.downloadAspDocx(dashboard.group, bootstrap.section, dashboard.members);
+  };
+
   async function init() {
     if (!isConfigured) {
       showSetupNotice();
