@@ -196,39 +196,9 @@ window.downloadPhpDocx = async function (group, section) {
         sectionHeading("5. Database Tables Used"),
         tablesTable,
         new Paragraph({ children: [run("")], spacing: { after: 80 } }),
-        bodyText("Paste or draw your ER diagram / table relationship below (optional but recommended):"),
-        ...blankLines(6),
-
-        // 6. Screenshots
-        sectionHeading("6. Screenshots"),
-        bodyText("Paste screenshots of each main page below. Label each one clearly."),
-        subHeading("6.1 Dashboard / Home Page"),
-        ...blankLines(7),
-        subHeading("6.2 List / View Page"),
-        ...blankLines(7),
-        subHeading("6.3 Add / Create Form"),
-        ...blankLines(7),
-        subHeading("6.4 Edit Form"),
-        ...blankLines(7),
-        subHeading("6.5 Delete Confirmation"),
-        ...blankLines(5),
-        subHeading("6.6 Other pages (if any)"),
-        ...blankLines(5),
-
-        // 7. How to Run Locally
-        sectionHeading("7. How to Run Locally"),
-        bodyText("Follow these steps to run the project on a local machine using XAMPP:"),
-        new Paragraph({ children: [run("1.", { bold: true }), run("  Install XAMPP and make sure Apache and MySQL are running.")], spacing: { after: 60 } }),
-        new Paragraph({ children: [run("2.", { bold: true }), run("  Clone or download the project from GitHub and place the folder inside "), run("htdocs", { bold: true }), run(".")], spacing: { after: 60 } }),
-        new Paragraph({ children: [run("3.", { bold: true }), run("  Open phpMyAdmin ("), run("http://localhost/phpmyadmin", { italic: true }), run(") and create a database named "), run("[your_db_name]", { bold: true, color: ACCENT }), run(".")], spacing: { after: 60 } }),
-        new Paragraph({ children: [run("4.", { bold: true }), run("  Import the SQL file: click Import → choose "), run("[your_database_name.sql]", { bold: true, color: ACCENT }), run(" → click Go.")], spacing: { after: 60 } }),
-        new Paragraph({ children: [run("5.", { bold: true }), run("  Open the DB connection file ("), run("config.php", { italic: true }), run(" or similar) and verify the credentials match your XAMPP setup.")], spacing: { after: 60 } }),
-        new Paragraph({ children: [run("6.", { bold: true }), run("  Open your browser and go to "), run("http://localhost/[folder-name]/", { italic: true }), run(" to run the system.")], spacing: { after: 80 } }),
-        ph("[Add any additional steps specific to your project here]"),
-        ...blankLines(2),
-
+        
         // 8. Project Links
-        sectionHeading("8. Project Links"),
+        sectionHeading("6. Project Links"),
         linksTable,
 
         new Paragraph({ children: [run("")], spacing: { after: 160 } }),
